@@ -13,13 +13,21 @@ never use them (DeFi), but you are free to extend the scripts to your needs.
 
 ## How to run it
 
-Edit [walletTransactions.py](python/walletTransactions.py) with your personal information.
+Edit [user_wallets.json](data/user_wallets.json) and
+[baker_wallets.json](data/baker_wallets.json) with your personal information.
+
+Edit [tax_parameters.json](data/tax_parameters.json) with your country specific tax
+parameters.
+
+Add any needed operation correction to [operation_corrections.json](data/operation_corrections.json).
 
 Run the script using python3:
 
 ```bash
 cd my-tezos-taxes/python
-python3 walletTransactions.py
+python3 walletOperations.py
+python3 tokenTransfers.py
+python3 calculateTaxes.py
 ```
 
-After few seconds you will find a csv file in the [data directory](data).
+After few seconds you will have the tax report and some csv files will be saved in the [data directory](data).

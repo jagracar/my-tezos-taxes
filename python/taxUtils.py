@@ -1,5 +1,129 @@
 import json
 import requests
+import pandas as pd
+
+# Trick to be able to print the complete transaction hashes on the console
+pd.options.display.max_colwidth = 60
+
+# The main tezos tokens
+TOKENS = {
+    "OBJKT": "KT1RJ6PbjHpwc3M5rw5s2Nbmefwbuwbdxton",
+    "Tezzardz": "KT1LHHLso8zQWQWg1HUukajdxxbkGfNoHjh6",
+    "GOGOs": "KT1SyPgtiXTaEfBuMZKviWGNHqVrBBEjvtfQ",
+    "GOGOs Inventory Item": "KT1Xf44LpwrA7oBcB3VwWTtUBP1eNRaNnWeh",
+    "NEONZ": "KT1MsdyBSAMQwzvDH4jt2mxUKJvBSWZuPoRJ",
+    "Skeles": "KT1HZVd9Cjc2CMe3sQvXgbxhpJkdena21pih",
+    "VesselsGen0": "KT1BfKnSKV6Wx45Cv4yjEYXViwuhmswby8Hp",
+    "GENTK v1": "KT1KEa8z6vWXDJrVqtMrAeDVzsvxat3kHaCE",
+    "GENTK v2": "KT1U6EHmNxJTkvaWJ4ThczG4FSDaHC21ssvi",
+    "ITEM": "KT1LjmAdYQCLBjwv4S2oFkEzyHVkomAf5MrW",
+    "tz1and Place token": "KT1G6bH9NVDp8tSSz7FzDUnCgbJwQikxtUog",
+    "tz1and Item token": "KT1TKFWDiMk35c5n94TMmLaYksdXkHuaL112",
+    "8bidou 24x24 token": "KT1TR1ErEQPTdtaJ7hbvKTJSa1tsGnHGZTpf",
+    "contter token": "KT1J1bx1ynm3UVgT7ymBPCDEtNEYjoMPcsQg",
+    "typed token": "KT1J6NY5AU61GzUX51n59wwiZcGJ9DrNTwbK",
+    "8scribo token": "KT1Aq1umaV8gcDQmi4CLDk7KeKpoUjFQeg1B",
+    "Hash Three Points token": "KT1Fxz4V3LaUcVFpvF8pAAx8G3Z4H7p7hhDg",
+    "25FPS token": "KT1Do66uucsbGELYV1sbLwBttCc5Gu6NrKmo",
+    "hDAO": "KT1AFA2mwNUMNd4SsujE1YYp29vd8BZejyKW",
+    "MATH": "KT18hYjnko76SBVv6TaCT4kU6B32mJk6JWLZ",
+    "Materia": "KT1KRvNVubq64ttPbQarxec5XdS6ZQU4DVD2",
+    "Tezos domain token": "KT1GBZmSxmnKJXGMdMLbugPfLyUPmuLSMwKS",
+    "Hedgehoge": "KT1G1cCRNBgQ48mVDjopHjEmTN5Sbtar8nn9",
+    "akaSwap token": "KT1AFq5XorPduoYyWxs5gEyrFK6fVjJVbtCj",
+    "TezDAO": "KT1C9X9s5rpVJGxwVuHEVBLYEdAQ1Qw8QDjH",
+    "PRJKTNEON": "KT1VbHpQmtkA3D4uEbbju26zS8C42M5AGNjZ",
+    "PRJKTNEON FILES": "KT1H8sxNSgnkCeZsij4z76pkXu8BCZNvPZEx",
+    "TezoTrooperz - Potions": "KT1W7hHwQeVkPN5yMSm1rPpmjwaHDPQMLMVa"
+}
+
+# The main tezos tokens mint prices in tez
+TOKENS_MINT_PRICE = {
+    TOKENS["Tezzardz"]: 15,
+    TOKENS["GOGOs"]: 15,
+    TOKENS["NEONZ"]: 20,
+    TOKENS["Skeles"]: 5,
+    TOKENS["VesselsGen0"]: 15,
+    TOKENS["Hash Three Points token"]: 5,
+    TOKENS["25FPS token"]: 113
+}
+
+# The main tezos smart contracts
+SMART_CONTRACTS = {
+    # Token minters
+    "Tezzardz minter": "KT1DdxmJujm3u2ZNkYwV24qLBJ6iR7sc58B9",
+    "GOGOs minter": "KT1CExkW5WoKqoiv5An6uaZzN6i2Q3mxcqpW",
+    "NEONZ minter": "KT1QMAN7pWrR7fdiiMZ8mtVMMeFw2nADcVAH",
+    "Skeles minter": "KT1AvxTNETj3U4b3wKYxkX6CKya1EgLZezv8",
+    "VesselsGen0 minter": "KT1U1GDQDE7C9DNfE9iSojsKfWf5zUXdSVde",
+    "FXHASH minter v1": "KT1AEVuykWeuuFX7QkEAMNtffzwhe1Z98hJS",
+    "FXHASH minter v2": "KT1XCoGnfupWk7Sp8536EfrxcP73LmT68Nyr",
+    "FXHASH minter v3": "KT1BJC12dG17CVvPKJ1VYaNnaT5mzfnUTwXv",
+    "25FPS minter": "KT1Q2jUJnrvrrhi4gBpZVLm37nyCqaFNtK7X",
+    # Marketplaces
+    "h=n marketplace v1": "KT1Hkg5qeNhfwpKW4fXvq7HGZB9z2EnmCCA9",
+    "h=n marketplace v2": "KT1HbQepzV1nVGg8QVznG7z4RcHseD5kwqBn",
+    "teia marketplace prototype 1": "KT1VYEphkUaRgSqiEePADXEV6B9fxraWQETk",
+    "teia marketplace prototype 2": "KT1DEcMs5t5SNKE3oVRk3MwGRrswuDaWJ6nq",
+    "teia marketplace": "KT1PHubm9HtyQEJ4BBpMTVomq6mhbfNZ9z5w",
+    "objkt.com marketplace v1": "KT1FvqJwEDWb1Gwc55Jd1jjTHRVWbYKUUpyq",
+    "objkt.com marketplace v2": "KT1WvzYHCNBvDSdwafTHv7nJ1dWmZ8GCYuuC",
+    "FXHASH marketplace v1": "KT1Xo5B7PNBAeynZPmca4bRh6LQow4og1Zb9",
+    "FXHASH marketplace v2": "KT1GbyoDi7H1sfXmimXpptZJuCdHMh66WS9u",
+    "versum marketplace": "KT1GyRAJNdizF1nojQz62uGYkx8WFRUJm9X5",
+    "8bidou marketplace": "KT1AHBvSo828QwscsjDjeUuep7MgApi8hXqA",
+    "contter marketplace I": "KT1WBmegTu1CJi4Q9ZNQT47gtbuqVjwmUUQZ",
+    "contter marketplace II": "KT1SEKxDMTNRpQnb5o2pyiYBKyrH9a8FiB4k",
+    "typed marketplace": "KT1VoZeuBMJF6vxtLqEFMoc4no5VDG789D7z",
+    "8scribo marketplace": "KT19vw7kh7dzTRxFUZNWu39773baauzNWtzj",
+    "Barter marketplace": "KT1XtJ6k51y7HpLFLTNv2wBYFhfVMZ6ow3Sz",
+    # Other
+    "h=n name registry": "KT1My1wDZHDGweCrJnQJi3wcFaS67iksirvj",
+    "FXHASH name registry": "KT1Ezht4PDKZri7aVppVGT4Jkw39sesaFnww",
+    "versum registry": "KT1NUrzs7tiT4VbNPqeTxgAFa4SXeV1f3xe9",
+    "contter registry": "KT1Hv7keNNq3KEhbr6fWQZvJq93mSmYF9zSf",
+    "h=n OBJKT-hDAO curation": "KT1TybhR7XraG75JFYKSrh7KnxukMBT5dor6",
+    "Tezos Domains TLDRegistrar": "KT1Mqx5meQbhufngJnUAGEGpa4ZRxhPSiCgB",
+    "Tezos Domains registrar": "KT1EVYBj3f1rZHNeUtq4ZvVxPTs77wuHwARU",
+    "Tezos Domains TLDRegistrar Commit": "KT1P8n2qzJjwMPbHJfi4o8xu6Pe3gaU3u2A3",
+    "Tezos Domains TLDRegistrar Buy": "KT191reDVKrLxU9rjTSxg53wRqj6zh8pnHgr",
+    "Tezos Domains NameRegistry": "KT1GBZmSxmnKJXGMdMLbugPfLyUPmuLSMwKS",
+    "Tezos Domains NameRegistry ClaimReverseRecord": "KT1TnTr6b2YxSx2xUQ8Vz3MoWy771ta66yGx",
+    "Tezos Domains NameRegistry UpdateRecord": "KT1H1MqmUM4aK9i1833EBmYCCEfkbt6ZdSBc",
+    "teia multisig": "KT1PKBTVmdxfgkFvSeNUQacYiEFsPBw16B4P",
+    "teia multisig prototype 1": "KT1Cecn3A2A4i9EmSqug45iyzUUQc4F7C9yM",
+    "teia multisig prototype 2": "KT1QmSmQ8Mj8JHNKKQmepFqQZy7kDWQ1ek69",
+    "teia multisig prototype 3": "KT1RtYAfoiFNkgZxQJmkSAEyQitfEQHyX3Cb",
+    "teia multisig prototype 4": "KT1BVekM6Y4ykN2uEW9FFxuZ4nY8QuY19Pb6",
+    "teia vote": "KT1FtGBdmmzxeV1cbGP2v7RYWtwm27s9zfEa",
+    "tz1and auctions": "KT1WmMn55RjXwk5Xb4YE6asjy5BvMiEsB6nA",
+    "tz1and world": "KT1EuSjJgQRGXM18TEu1WaMRyshPSkSCg11n",
+    "Breadfond 1": "KT1AyAhwyjwmbZKVdDnZNcQDgprXpCpmSNFu",
+    "Breadfond 2": "KT1XRu5sjuBxiFbaPeUkPUGy8zJmPEbuxaFx",
+    "Breadfond 3": "KT1Bgz17GRSkoNN1WfRka24VZm5ffXMep67G",
+    "Interactive experiment 1": "KT1CiUSxDpfAeuCYubpZ75v6RFvGHwVBajDt",
+    "Interactive experiment 2": "KT1JP5Zobg2ymQUtqNrAqDMUAUUPnar9UbV4",
+    "my tzprofile contract 1": "KT1C3ygBBp9Y6sBpFHuqw4PABC1wuABmUy1t",
+    "my tzprofile contract 2": "KT1DCrMtizELFpUviaX4KoNKJkN2uJ7t6oHM"
+}
+
+
+def read_json_file(file_name):
+    """Reads a json file from disk.
+
+    Parameters
+    ----------
+    file_name: str
+        The complete path to the json file.
+
+    Returns
+    -------
+    object
+        The content of the json file.
+
+    """
+    with open(file_name, "r", encoding="utf-8") as json_file:
+        return json.load(json_file)
 
 
 def get_query_result(url, parameters=None, timeout=30):
@@ -54,6 +178,82 @@ def get_graphql_query_result(url, query, timeout=30):
     return None
 
 
+def get_tzkt_query_result(url, parameters=None, timeout=30):
+    """Executes the given tzkt query and returns the result.
+
+    Parameters
+    ----------
+    url: str
+        The url to the tzkt server API.
+    parameters: dict, optional
+        The query parameters. Default is None.
+    timeout: float, optional
+        The query timeout in seconds. Default is 30 seconds.
+
+    Returns
+    -------
+    object
+        The query result.
+
+    """
+    # Edit the provided query parameters
+    parameters = {} if parameters is None else parameters.copy()
+    parameters["limit"] = 10000
+
+    # Iterate to get the complete query result
+    result = []
+
+    while True:
+        parameters["offset"] = len(result)
+        result += get_query_result(url, parameters, timeout)
+
+        if len(result) != (parameters["offset"] + parameters["limit"]):
+            break
+
+    return result
+
+
+def get_teztok_query_result(query, kind, timeout=30):
+    """Executes the given teztok query and returns the result.
+
+    Parameters
+    ----------
+    query: dict
+        The GraphQL query.
+    kind: str
+        The kind of teztok query.
+    timeout: float, optional
+        The query timeout in seconds. Default is 30 seconds.
+
+    Returns
+    -------
+    object
+        The query result.
+
+    """
+    # Define url to the teztok GraphQL server API
+    url = "https://api.teztok.com/v1/graphql"
+
+    # Edit the provided query
+    query = query.copy()
+    limit = 10000
+    query_string = query["query"].replace("**LIMIT**", str(limit))
+
+    # Iterate to get the complete query result
+    result = []
+
+    while True:
+        offset = len(result)
+        edited_query = query.copy()
+        edited_query["query"] = query_string.replace("**OFFSET**", str(offset)) 
+        result += get_graphql_query_result(url, edited_query, timeout)["data"][kind]
+
+        if len(result) != (offset + limit):
+            break
+
+    return result
+
+
 def get_objktcom_collections():
     """Returns the complete list of objkt.com collection addresses.
 
@@ -63,20 +263,131 @@ def get_objktcom_collections():
         A python list with the objkt.com collection addresses.
 
     """
-    objktcom_collections = []
+    url = "https://api.tzkt.io/v1/bigmaps/24157/keys"
+    parameters = {"select": "value"}
+    objktcom_collections = get_tzkt_query_result(url, parameters)
 
-    while True:
-        url = "https://api.tzkt.io/v1/bigmaps/24157/keys"
+    return [collection["contract"] for collection in objktcom_collections]
+
+
+def get_user_transactions(user_wallets):
+    """Returns the complete list of user transactions.
+
+    Parameters
+    ----------
+    user_wallets: list
+        The user wallet addresses.
+
+    Returns
+    -------
+    list
+        A python list with the user transactions.
+
+    """
+    url = "https://api.tzkt.io/v1/operations/transactions"
+    parameters = {
+        "anyof.initiator.sender.target.in": ",".join(user_wallets),
+        "status": "applied",
+        "quote": "eur,usd"}
+
+    return get_tzkt_query_result(url, parameters)
+
+
+def get_user_originations(user_wallets):
+    """Returns the complete list of user contract originations.
+
+    Parameters
+    ----------
+    user_wallets: list
+        The user wallet addresses.
+
+    Returns
+    -------
+    list
+        A python list with the user contract originations.
+
+    """
+    url = "https://api.tzkt.io/v1/operations/originations"
+    parameters = {
+        "anyof.initiator.sender.in": ",".join(user_wallets),
+        "status": "applied",
+        "quote": "eur,usd"}
+
+    return get_tzkt_query_result(url, parameters)
+
+
+def get_user_token_transfers(user_wallets):
+    """Returns the complete list of token transfers associated to the user.
+
+    Parameters
+    ----------
+    user_wallets: list
+        The user wallet addresses.
+
+    Returns
+    -------
+    list
+        A python list with the token transfers associated to the user.
+
+    """
+    url = "https://api.tzkt.io/v1/tokens/transfers"
+    parameters = {"anyof.from.to.in": ",".join(user_wallets)}
+
+    return get_tzkt_query_result(url, parameters)
+
+
+def get_user_historical_balance(user_wallets):
+    """Returns the user historical tez balance.
+
+    Parameters
+    ----------
+    user_wallets: list
+        The user wallet addresses.
+
+    Returns
+    -------
+    dict
+        A python dictionary with the user historical tez balance.
+
+    """
+    # Get the historical balance for each of the user wallets
+    historical_balances = []
+
+    for wallet in user_wallets:
+        url = "https://api.tzkt.io/v1/accounts/%s/balance_history" % wallet
         parameters = {
-            "limit": 10000,
-            "select": "value",
-            "offset": len(objktcom_collections)}
-        objktcom_collections += [collection["contract"] for collection in get_query_result(url, parameters)]
+            "step": 1,
+            "quote": "eur,usd"}
+        query_result = get_tzkt_query_result(url, parameters)
+        historical_balances.append({item["level"]: item for item in query_result})
 
-        if len(objktcom_collections) != parameters["offset"] + parameters["limit"]:
-            break
+    # Get all the block levels for which we have some balance information
+    levels = []
 
-    return objktcom_collections
+    for wallet_balances in historical_balances:
+        levels += list(wallet_balances.keys())
+
+    # Remove block level duplications and make sure they are sorted
+    levels = list(set(levels))
+    levels.sort()
+
+    # Calculate the combined historical wallet balances
+    combined_balances = [{"level": level, "timestamp": None, "balance": 0, "quote": None} for level in levels]
+
+    for wallet_balances in historical_balances:
+        previous_balance_amount = 0
+
+        for balance in combined_balances:
+            level = balance["level"]
+
+            if level in wallet_balances:
+                balance["timestamp"] = wallet_balances[level]["timestamp"]
+                balance["quote"] = wallet_balances[level]["quote"]
+                previous_balance_amount = wallet_balances[level]["balance"] / 1e6
+
+            balance["balance"] += previous_balance_amount
+
+    return combined_balances
 
 
 def get_user_mints(user_wallets):
@@ -93,11 +404,11 @@ def get_user_mints(user_wallets):
         A python dictionary with user mint operations information.
 
     """
-    url = "https://api.teztok.com/v1/graphql"
     query = """
         query UserMints {
-            events(where: {artist_address: {_in: ["%s"]}, type: {_like: "%s"}}, order_by: {timestamp: asc}, limit: 10000) {
+            events(where: {artist_address: {_in: ["%s"]}, type: {_like: "%s"}}, order_by: {timestamp: asc}, limit: **LIMIT**, offset: **OFFSET**) {
                 type
+                editions
                 timestamp
                 ophash
                 token {
@@ -111,7 +422,7 @@ def get_user_mints(user_wallets):
             }
         }
     """ % ('","'.join(user_wallets), "%MINT%")
-    mints = get_graphql_query_result(url, {"query": query})["data"]["events"]
+    mints = get_teztok_query_result({"query": query}, kind="events")
 
     return {mint["ophash"]: mint for mint in mints}
 
@@ -130,17 +441,16 @@ def get_user_fulfilled_offers(user_wallets):
         A python dictionary with user fulfilled offers.
 
     """
-    url = "https://api.teztok.com/v1/graphql"
     query = """
         query UserFulfilledOffers {
-            offers(where: {buyer_address: {_in: ["%s"]}, status: {_eq: "fulfilled"}}, limit: 10000) {
+            offers(where: {buyer_address: {_in: ["%s"]}, status: {_eq: "fulfilled"}}, limit: **LIMIT**, offset: **OFFSET**) {
                 type
                 offer_id
                 bid_id
             }
         }
     """ % ('","'.join(user_wallets))
-    fulfilled_offers = get_graphql_query_result(url, {"query": query})["data"]["offers"]
+    fulfilled_offers = get_teztok_query_result({"query": query}, kind="offers")
 
     offers = {}
 
@@ -149,6 +459,9 @@ def get_user_fulfilled_offers(user_wallets):
             offers[offer["type"]] = []
 
         offers[offer["type"]].append(offer["offer_id"] if offer["offer_id"] is not None else offer["bid_id"])
+
+    if "VERSUM_OFFER" in offers:
+        offers["VERSUM_MAKE_OFFER"] = offers["VERSUM_OFFER"]
 
     return offers
 
@@ -168,10 +481,9 @@ def get_user_collects(user_wallets):
 
     """
     # Get the user collects
-    url = "https://api.teztok.com/v1/graphql"
     query = """
         query UserCollects {
-            events(where: {buyer_address: {_in: ["%s"]}}, order_by: {timestamp: asc}, limit: 10000) {
+            events(where: {buyer_address: {_in: ["%s"]}}, order_by: {timestamp: asc}, limit: **LIMIT**, offset: **OFFSET**) {
                 type
                 timestamp
                 ophash
@@ -191,7 +503,7 @@ def get_user_collects(user_wallets):
             }
         }
     """ % ('","'.join(user_wallets))
-    collects = get_graphql_query_result(url, {"query": query})["data"]["events"]
+    collects = get_teztok_query_result({"query": query}, kind="events")
 
     # Get the fulfilled offers
     fulfilled_offers = get_user_fulfilled_offers(user_wallets)
@@ -206,6 +518,9 @@ def get_user_collects(user_wallets):
                     collect["offer_fulfilled"] = collect["offer_id"] in fulfilled_offers[collect["type"]]
                 else:
                     collect["offer_fulfilled"] = collect["bid_id"] in fulfilled_offers[collect["type"]]
+
+        if collect["type"] == "FX_COLLECT":
+            collect["offer_fulfilled"] = True
 
     return {collect["ophash"]: collect for collect in collects}
 
@@ -242,10 +557,9 @@ def get_user_art_sales(user_wallets):
     art_sales = []
 
     for fa2_address, token_ids in minted_tokens.items():
-        url = "https://api.teztok.com/v1/graphql"
         query = """
             query UserArtSales {
-                events(where: {seller_address: {_in: ["%s"]}, implements: {_is_null: true}, _or: [{fa2_address: {_eq: "%s"}, token_id: {_in: ["%s"]}}]}, order_by: {timestamp: asc}, limit: 10000) {
+                events(where: {seller_address: {_in: ["%s"]}, implements: {_is_null: true}, _or: [{fa2_address: {_eq: "%s"}, token_id: {_in: ["%s"]}}]}, order_by: {timestamp: asc}, limit: **LIMIT**, offset: **OFFSET**) {
                     type
                     timestamp
                     ophash
@@ -263,12 +577,11 @@ def get_user_art_sales(user_wallets):
                 }
             }
         """ % ('","'.join(user_wallets), fa2_address, '","'.join(token_ids))
-        art_sales += get_graphql_query_result(url, {"query": query})["data"]["events"]
+        art_sales += get_teztok_query_result({"query": query}, kind="events")
 
-        url = "https://api.teztok.com/v1/graphql"
         query = """
             query UserArtSales {
-                events(where: {implements: {_eq: "SALE"}, _or: [{fa2_address: {_eq: "%s"}, token_id: {_in: ["%s"]}}]}, order_by: {timestamp: asc}, limit: 10000) {
+                events(where: {implements: {_eq: "SALE"}, _or: [{fa2_address: {_eq: "%s"}, token_id: {_in: ["%s"]}}]}, order_by: {timestamp: asc}, limit: **LIMIT**, offset: **OFFSET**) {
                     type
                     timestamp
                     ophash
@@ -286,7 +599,7 @@ def get_user_art_sales(user_wallets):
                 }
             }
         """ % (fa2_address, '","'.join(token_ids))
-        art_sales += get_graphql_query_result(url, {"query": query})["data"]["events"]
+        art_sales += get_teztok_query_result({"query": query}, kind="events")
 
     return {sale["ophash"]: sale for sale in art_sales}
 
@@ -306,10 +619,9 @@ def get_user_collection_sales(user_wallets):
         A python dictionary with user collection sale operations information.
 
     """
-    url = "https://api.teztok.com/v1/graphql"
     query = """
         query UserCollectionSales {
-            events(where: {seller_address: {_in: ["%s"]}, token: {artist_address: {_nin: ["%s"]}}}, order_by: {timestamp: asc}, limit: 10000) {
+            events(where: {seller_address: {_in: ["%s"]}, token: {artist_address: {_nin: ["%s"]}}}, order_by: {timestamp: asc}, limit: **LIMIT**, offset: **OFFSET**) {
                 type
                 timestamp
                 ophash
@@ -327,42 +639,33 @@ def get_user_collection_sales(user_wallets):
             }
         }
     """ % ('","'.join(user_wallets), '","'.join(user_wallets))
-    collection_sales = get_graphql_query_result(url, {"query": query})["data"]["events"]
+    collection_sales = get_teztok_query_result({"query": query}, kind="events")
 
     return {sale["ophash"]: sale for sale in collection_sales}
 
 
-def get_user_transactions(user_wallets, timestamp_range):
-    """Returns the complete list of user transactions.
+def fix_missing_token_information(tokens, token_transfers, kind):
+    # Try to fix the missing information using the token transfers details
+    for index, token in tokens.iterrows():
+        if token["token_id"] == "":
+            token_address = token["token_address"]
+            timestamp = token["timestamp"]
 
-    Parameters
-    ----------
-    user_wallets: list
-        The user wallet addresses.
-    timestamp_range: list
-        The timestamp range for the transactions.
+            if token_address != "":
+                cond = ((token_transfers["token_address"] == token_address) & 
+                        (token_transfers["timestamp"] == timestamp))
 
-    Returns
-    -------
-    list
-        A python list with the user transactions.
+                if cond.sum() == 0:
+                    cond = ((token_transfers["token_address"] == token_address) & 
+                            (token_transfers[kind]))
+            else:
+                cond = token_transfers["timestamp"] == timestamp
 
-    """
-    transactions = []
+            if cond.sum() == 1:
+                transfers = token_transfers[cond]
+                tokens.loc[index, "token_name"] = transfers["token_name"].values[0]
+                tokens.loc[index, "token_id"] = transfers["token_id"].values[0]
+                tokens.loc[index, "token_editions"] = transfers["token_editions"].values[0]
+                tokens.loc[index, "token_address"] = transfers["token_address"].values[0]
 
-    while True:
-        url = "https://api.tzkt.io/v1/operations/transactions"
-        parameters = {
-            "anyof.initiator.sender.target.in": ",".join(user_wallets),
-            "timestamp.gt": timestamp_range[0],
-            "timestamp.lt": timestamp_range[1],
-            "status": "applied",
-            "limit": 10000,
-            "offset": len(transactions),
-            "quote": "Eur"}
-        transactions += get_query_result(url, parameters)
-
-        if len(transactions) != parameters["offset"] + parameters["limit"]:
-            break
-
-    return transactions
+    return tokens

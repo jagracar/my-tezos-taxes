@@ -1,0 +1,75 @@
+{
+	"oo38nLvd5qnabN4fK2N49aWPrnK3JmA8cb6BFfNyzgmZzTaS5jM": {
+		"comment": "Buy 1/1 Z.Lieberman",
+		"ignore": true
+	},
+	"onzPve3arjH4rq3neaRsgMbbVBhSRgiSpUtj5eUaYGBaPMKrPg2": {
+		"comment": "Return 1/1 Z.Lieberman",
+		"ignore": true
+	},
+	"onsV2Yc5CjY1Jm9qVPNY2ykaGbkg28L8ELsBj2Nn6MVd8ai8FqT": {
+		"comment": "Metropolis token mint",
+		"mint": false,
+		"collect": true
+	},
+	"ooDJdcKj1GGHhZ5xYdQhVzHrKZoSPR4ZR9d5MMFm8TJubxaSSve": {
+		"comment": "Prize from winning the Gitcoin Game On! Tezos - Metaverse Bounty",
+		"link": "https://gitcoin.co/issue/tezos-contrib/gitcoin-bounties/11/100027148",
+		"kind": "hackathon prize",
+		"prize": true
+	},
+	"opKg2yAdudfnbvYGdQcUu9ReNNPu45q6YBuDhTqSCqYTbooxWFi": {
+		"comment": "Tezos community reward",
+		"link": "https://medium.com/tezoscommons/tezos-community-rewards-march-2022-202712d791a3",
+		"kind": "tezos community reward",
+		"prize": true
+	},
+	"opEtD83fGwsLtuKEAgpPy4YYMvmsiZd8vawrutQsuEESMjBJWcS": {
+		"comment": "Tezos community reward",
+		"link": "https://news.tezoscommons.org/tezos-community-rewards-april-2022-winners-d329c83d7aff",
+		"kind": "tezos community reward",
+		"prize": true
+	},
+	"oojygYfafCReCRib8qhKiYoSadXQurXLv6LygLjNuuhs33Ec58p": {
+		"comment": "Donation to the Processing Foundation",
+		"kind": "Donation to the Processing Foundation",
+		"donation": true
+	},
+	"oooBz3RF3JXjQNfm8a8MC8JynmPKrhAt4avqUdsgHtfXT2opUeQ": {
+		"comment": "Tezos domain renovation",
+		"kind": "Tezos domain renovation",
+		"collect": true,
+		"token_editions": 1,
+		"token_address": "KT1GBZmSxmnKJXGMdMLbugPfLyUPmuLSMwKS"
+    },
+	"opCsLjX7bXmsRqgkRx2PGKANYeQ65dH2PvfYE6qduSwuCtgCgjx": {
+		"comment": "Faucet temporal help: receive tez"
+	},
+	"opC7uvdMYWjoEesV2irv3pj9aXXh9Dk7Jkbz1fbjH8HQoDzhoGp": {
+		"comment": "Faucet temporal help: return tez"
+	},
+	"ooPo8XGkyQwR1wYBDwrQ77BgRyTRF3Vj1yj8MGgpyWfPDvQNsYH": {
+		"comment": "Ganbrood temporal help (I): receive tez"
+	},
+	"op4kTT3CBQe53bpBVZzLpuc46Wzv9oU13YbqR32wfJKtcEDeZYu": {
+		"comment": "Ganbrood temporal help (I): return tez"
+	},
+	"onrPqrNqWRpLUUUmnijLtHKvU4FcPjGXnYpMBPY3M41Lirhn6LU": {
+		"comment": "Ganbrood temporal help (II): receive tez"
+	},
+	"opAK4LvjsKUb9eVppcH3FrHYu5KeMmFmWM7BGqZ8Nv1uE8LYq2t": {
+		"comment": "Ganbrood temporal help (II): return tez"
+	},
+	"ookuJNbxtPf9A473UQgFCfbbtYU875n6e7xKhsYvYSZkQEGVVbh": {
+		"comment": "1x1 temporal help: receive tez"
+	},
+	"ooCQBLBBNJpaX6MvH1M2dNB9PUAE87YV695HFqnYp1b2TXXhxz5": {
+		"comment": "1x1 temporal help: return tez"
+	},
+	"opLRCgM8z8WuK3ouViTKmuUNDJF5ZaXbSrxxHD5wgCwePrTiZYb": {
+		"comment": "mattdesl game: send tez"
+	},
+	"onubK8MdwExxD4YMZWUQnCe42yg8nWi9hGxagKUPL2NKb9S8iew": {
+		"comment": "mattdesl game: receive tez"
+	}
+}
