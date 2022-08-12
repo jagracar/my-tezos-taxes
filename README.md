@@ -21,7 +21,7 @@ parameters.
 
 Add any needed operation correction to [operation_corrections.json](data/operation_corrections.json).
 
-Run the script using python3:
+Run the scripts using python3:
 
 ```bash
 cd my-tezos-taxes/python
