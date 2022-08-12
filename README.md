@@ -27,6 +27,7 @@ Run the scripts using python3:
 cd my-tezos-taxes/python
 python3 walletOperations.py
 python3 tokenTransfers.py
+python3 historicalTezBalance.py
 python3 calculateTaxes.py
 ```
 

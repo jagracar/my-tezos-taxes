@@ -229,3 +229,49 @@ print("   %.2f tez (%.2f %s) from prizes (hackathons, community rewards, etc)." 
 print("   %.2f tez (%.2f %s) from stacking rewards." % (
     tax_operations["stacking_rewards_amount"].sum(), tax_operations["stacking_rewards_amount_fiat"].sum(), fiat_coin))
 print("")
+
+"""
+##########
+cond = operations["received_amount"] > 0
+buy = operations["received_amount"][cond].to_numpy()
+buy_timestamp = operations["timestamp"][cond].to_numpy()
+buy_exchange = operations["tez_to_euros"][cond].to_numpy()
+
+cond = (operations["spent_amount"] > 0) | (operations["spent_fees"] > 0)
+spend = operations["spent_amount"][cond].to_numpy()
+fees = operations["spent_fees"][cond].to_numpy()
+spend_timestamp = operations["timestamp"][cond].to_numpy()
+is_collect = operations["collect_amount"][cond].to_numpy() > 0
+spend_exchange = operations["tez_to_euros"][cond].to_numpy()
+
+accumulated_gains_euros = 0
+
+for i in range(0, len(spend)):
+    fee_value = fees[i]
+
+    while fee_value > 0:
+        if fee_value < buy[0]:
+            buy[0] -= fee_value
+            fee_value = 0
+        elif fee_value >= buy[0]:
+            fee_value -= buy[0]
+            buy = buy[1:]
+            buy_timestamp = buy_timestamp[1:]
+            buy_exchange = buy_exchange[1:]
+
+    spend_value = spend[i]
+
+    while spend_value > 0:
+        if spend_value < buy[0]:
+            gain_euros = spend_value * (spend_exchange[i] - buy_exchange[0])
+            accumulated_gains_euros += gain_euros
+            buy[0] -= spend_value
+            spend_value = 0
+        elif spend_value >= buy[0]:
+            gain_euros = buy[0] * (spend_exchange[i] - buy_exchange[0])
+            accumulated_gains_euros += gain_euros
+            spend_value -= buy[0]
+            buy = buy[1:]
+            buy_timestamp = buy_timestamp[1:]
+            buy_exchange = buy_exchange[1:]
+"""
