@@ -5,7 +5,7 @@ import pandas as pd
 # Trick to be able to print the complete transaction hashes on the console
 pd.options.display.max_colwidth = 60
 
-# The main tezos tokens
+# The main tezos FA2 tokens
 TOKENS = {
     "OBJKT": "KT1RJ6PbjHpwc3M5rw5s2Nbmefwbuwbdxton",
     "Tezzardz": "KT1LHHLso8zQWQWg1HUukajdxxbkGfNoHjh6",
@@ -17,8 +17,9 @@ TOKENS = {
     "GENTK v1": "KT1KEa8z6vWXDJrVqtMrAeDVzsvxat3kHaCE",
     "GENTK v2": "KT1U6EHmNxJTkvaWJ4ThczG4FSDaHC21ssvi",
     "ITEM": "KT1LjmAdYQCLBjwv4S2oFkEzyHVkomAf5MrW",
-    "tz1and Place token": "KT1G6bH9NVDp8tSSz7FzDUnCgbJwQikxtUog",
-    "tz1and Item token": "KT1TKFWDiMk35c5n94TMmLaYksdXkHuaL112",
+    "tz1and Place": "KT1G6bH9NVDp8tSSz7FzDUnCgbJwQikxtUog",
+    "tz1and Item": "KT1TKFWDiMk35c5n94TMmLaYksdXkHuaL112",
+    "8bidou 8x8 token": "KT1MxDwChiDwd6WBVs24g1NjERUoK622ZEFp",
     "8bidou 24x24 token": "KT1TR1ErEQPTdtaJ7hbvKTJSa1tsGnHGZTpf",
     "contter token": "KT1J1bx1ynm3UVgT7ymBPCDEtNEYjoMPcsQg",
     "typed token": "KT1J6NY5AU61GzUX51n59wwiZcGJ9DrNTwbK",
@@ -29,12 +30,17 @@ TOKENS = {
     "MATH": "KT18hYjnko76SBVv6TaCT4kU6B32mJk6JWLZ",
     "Materia": "KT1KRvNVubq64ttPbQarxec5XdS6ZQU4DVD2",
     "Tezos domain token": "KT1GBZmSxmnKJXGMdMLbugPfLyUPmuLSMwKS",
-    "Hedgehoge": "KT1G1cCRNBgQ48mVDjopHjEmTN5Sbtar8nn9",
     "akaSwap token": "KT1AFq5XorPduoYyWxs5gEyrFK6fVjJVbtCj",
     "TezDAO": "KT1C9X9s5rpVJGxwVuHEVBLYEdAQ1Qw8QDjH",
     "PRJKTNEON": "KT1VbHpQmtkA3D4uEbbju26zS8C42M5AGNjZ",
     "PRJKTNEON FILES": "KT1H8sxNSgnkCeZsij4z76pkXu8BCZNvPZEx",
-    "TezoTrooperz - Potions": "KT1W7hHwQeVkPN5yMSm1rPpmjwaHDPQMLMVa"
+    "TezoTrooperz - Potions": "KT1W7hHwQeVkPN5yMSm1rPpmjwaHDPQMLMVa",
+    "akaSwap token": "KT1AFq5XorPduoYyWxs5gEyrFK6fVjJVbtCj",
+    "Art Cardz": "KT1LbLNTTPoLgpumACCBFJzBEHDiEUqNxz5C",
+    "Ziggurats": "KT1PNcZQkJXMQ2Mg92HG1kyrcu3auFX5pfd8",
+    "Rarible token": "KT18pVpRXKPY2c4U2yFEGSH3ZnhB2kL8kwXS",
+    "Les Elefants Terribles token": "KT19BLv8px4VMLduVnYgahqFbsJ19FJXamUG",
+    "The Moments token": "KT1CNHwTyjFrKnCstRoMftyFVwoNzF6Xxhpy"
 }
 
 # The main tezos tokens mint prices in tez
@@ -59,6 +65,7 @@ SMART_CONTRACTS = {
     "FXHASH minter v1": "KT1AEVuykWeuuFX7QkEAMNtffzwhe1Z98hJS",
     "FXHASH minter v2": "KT1XCoGnfupWk7Sp8536EfrxcP73LmT68Nyr",
     "FXHASH minter v3": "KT1BJC12dG17CVvPKJ1VYaNnaT5mzfnUTwXv",
+    "typed minter": "KT1CK9RnWZGnejBeT6gJfgvf4p7f1NwhP9wS",
     "25FPS minter": "KT1Q2jUJnrvrrhi4gBpZVLm37nyCqaFNtK7X",
     # Marketplaces
     "h=n marketplace v1": "KT1Hkg5qeNhfwpKW4fXvq7HGZB9z2EnmCCA9",
@@ -68,10 +75,13 @@ SMART_CONTRACTS = {
     "teia marketplace": "KT1PHubm9HtyQEJ4BBpMTVomq6mhbfNZ9z5w",
     "objkt.com marketplace v1": "KT1FvqJwEDWb1Gwc55Jd1jjTHRVWbYKUUpyq",
     "objkt.com marketplace v2": "KT1WvzYHCNBvDSdwafTHv7nJ1dWmZ8GCYuuC",
+    "objkt.com English Auctions v2": "KT18p94vjkkHYY3nPmernmgVR7HdZFzE7NAk",
+    "objkt.com Minting Factory": "KT1Aq4wWmVanpQhq4TTfjZXB5AjFpx15iQMM",
     "FXHASH marketplace v1": "KT1Xo5B7PNBAeynZPmca4bRh6LQow4og1Zb9",
     "FXHASH marketplace v2": "KT1GbyoDi7H1sfXmimXpptZJuCdHMh66WS9u",
     "versum marketplace": "KT1GyRAJNdizF1nojQz62uGYkx8WFRUJm9X5",
-    "8bidou marketplace": "KT1AHBvSo828QwscsjDjeUuep7MgApi8hXqA",
+    "8bidou marketplace I": "KT1BvWGFENd4CXW5F3u4n31xKfJhmBGipoqF",
+    "8bidou marketplace II": "KT1AHBvSo828QwscsjDjeUuep7MgApi8hXqA",
     "contter marketplace I": "KT1WBmegTu1CJi4Q9ZNQT47gtbuqVjwmUUQZ",
     "contter marketplace II": "KT1SEKxDMTNRpQnb5o2pyiYBKyrH9a8FiB4k",
     "typed marketplace": "KT1VoZeuBMJF6vxtLqEFMoc4no5VDG789D7z",
@@ -83,6 +93,7 @@ SMART_CONTRACTS = {
     "versum registry": "KT1NUrzs7tiT4VbNPqeTxgAFa4SXeV1f3xe9",
     "contter registry": "KT1Hv7keNNq3KEhbr6fWQZvJq93mSmYF9zSf",
     "h=n OBJKT-hDAO curation": "KT1TybhR7XraG75JFYKSrh7KnxukMBT5dor6",
+    "wXTZ objkt.com": "KT1TjnZYs5CGLbmV6yuW169P8Pnr9BiVwwjz",
     "Tezos Domains TLDRegistrar": "KT1Mqx5meQbhufngJnUAGEGpa4ZRxhPSiCgB",
     "Tezos Domains registrar": "KT1EVYBj3f1rZHNeUtq4ZvVxPTs77wuHwARU",
     "Tezos Domains TLDRegistrar Commit": "KT1P8n2qzJjwMPbHJfi4o8xu6Pe3gaU3u2A3",
@@ -103,6 +114,7 @@ SMART_CONTRACTS = {
     "Breadfond 3": "KT1Bgz17GRSkoNN1WfRka24VZm5ffXMep67G",
     "Interactive experiment 1": "KT1CiUSxDpfAeuCYubpZ75v6RFvGHwVBajDt",
     "Interactive experiment 2": "KT1JP5Zobg2ymQUtqNrAqDMUAUUPnar9UbV4",
+    "Interactive experiment 3": "KT1Nih5GpH763Bov23KZYS1R1R3ZWgGaAVfw",
     "my tzprofile contract 1": "KT1C3ygBBp9Y6sBpFHuqw4PABC1wuABmUy1t",
     "my tzprofile contract 2": "KT1DCrMtizELFpUviaX4KoNKJkN2uJ7t6oHM"
 }
@@ -252,6 +264,41 @@ def get_teztok_query_result(query, kind, timeout=30):
             break
 
     return result
+
+
+def get_fa12_tokens():
+    """Returns the complete list of tezos FA1.2 tokens.
+
+    Returns
+    -------
+    list
+        A python list with the tezos FA1.2 tokens.
+
+    """
+    url = "https://api.tzkt.io/v1/tokens"
+    parameters = {
+        "standard": "fa1.2",
+        "tokenId": "0"}
+    fa12_tokens = [entry["contract"] for entry in get_tzkt_query_result(url, parameters)]
+
+    return {token["address"]: token["alias"] if "alias" in token else "FA1.2 token" for token in fa12_tokens}
+
+
+def get_fa2_tokens():
+    """Returns the complete list of tezos FA2 tokens.
+
+    Returns
+    -------
+    list
+        A python list with the tezos FA2 tokens.
+
+    """
+    url = "https://api.tzkt.io/v1/tokens"
+    parameters = {"standard": "fa2",
+                  "tokenId": "0"}
+    fa2_tokens = [entry["contract"] for entry in get_tzkt_query_result(url, parameters)]
+
+    return {token["address"]: token["alias"] if "alias" in token else "FA2 token" for token in fa2_tokens}
 
 
 def get_objktcom_collections():
