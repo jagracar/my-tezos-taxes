@@ -99,14 +99,14 @@ with open(os.path.join(data_directory, file_name), "w") as file:
         data = (
             tt["timestamp"],
             tt["level"],
-            aliases.get(tt["from"], tt["from"]) if tt["from"] is not None else "",
-            aliases.get(tt["to"], tt["to"]) if tt["to"] is not None else "",
+            aliases.get(tt["from"], tt["from"]).replace(",", " ") if tt["from"] is not None else "",
+            aliases.get(tt["to"], tt["to"]).replace(",", " ") if tt["to"] is not None else "",
             tt["internal"],
             tt["mint"],
             tt["send"],
             tt["receive"],
             tt["burn"],
-            alias,
+            alias.replace(",", " "),
             tt["token_id"] if tt["token_id"] is not None else "",
             tt["token_editions"] if tt["token_editions"] is not None else "",
             token_address if token_address is not None else "")

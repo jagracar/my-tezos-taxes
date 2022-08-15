@@ -73,9 +73,14 @@ SMART_CONTRACTS = {
     "teia marketplace prototype 1": "KT1VYEphkUaRgSqiEePADXEV6B9fxraWQETk",
     "teia marketplace prototype 2": "KT1DEcMs5t5SNKE3oVRk3MwGRrswuDaWJ6nq",
     "teia marketplace": "KT1PHubm9HtyQEJ4BBpMTVomq6mhbfNZ9z5w",
+    "objkt.bid Legacy": "KT1Dno3sQZwR5wUCWxzaohwuJwG3gX1VWj1Z",
     "objkt.com marketplace v1": "KT1FvqJwEDWb1Gwc55Jd1jjTHRVWbYKUUpyq",
     "objkt.com marketplace v2": "KT1WvzYHCNBvDSdwafTHv7nJ1dWmZ8GCYuuC",
+    "objkt.com English Auctions Old": "KT1Wvk8fon9SgNEPQKewoSL2ziGGuCQebqZc",
+    "objkt.com English Auctions v1": "KT1XjcRq5MLAzMKQ3UHsrue2SeU2NbxUrzmU",
     "objkt.com English Auctions v2": "KT18p94vjkkHYY3nPmernmgVR7HdZFzE7NAk",
+    "objkt.com Dutch Auctions v1": "KT1QJ71jypKGgyTNtXjkCAYJZNhCKWiHuT2r",
+    "objkt.com Dutch Auctions v2": "KT1XXu88HkNzQRHNgAf7Mnq68LyS9MZJNoHP",
     "objkt.com Minting Factory": "KT1Aq4wWmVanpQhq4TTfjZXB5AjFpx15iQMM",
     "FXHASH marketplace v1": "KT1Xo5B7PNBAeynZPmca4bRh6LQow4og1Zb9",
     "FXHASH marketplace v2": "KT1GbyoDi7H1sfXmimXpptZJuCdHMh66WS9u",
@@ -116,7 +121,12 @@ SMART_CONTRACTS = {
     "Interactive experiment 2": "KT1JP5Zobg2ymQUtqNrAqDMUAUUPnar9UbV4",
     "Interactive experiment 3": "KT1Nih5GpH763Bov23KZYS1R1R3ZWgGaAVfw",
     "my tzprofile contract 1": "KT1C3ygBBp9Y6sBpFHuqw4PABC1wuABmUy1t",
-    "my tzprofile contract 2": "KT1DCrMtizELFpUviaX4KoNKJkN2uJ7t6oHM"
+    "my tzprofile contract 2": "KT1DCrMtizELFpUviaX4KoNKJkN2uJ7t6oHM",
+    "TezID Store": "KT1RaNxxgmVRXpyu927rbBFq835pnQk6cfvM",
+    "TezID Controller": "KT1KbV8dBrkFopgjcCc4qb2336fcGgTvRGRC",
+    "Ukraine war donations contract": "KT1DWnLiUkNtAQDErXxudFEH63JC6mqg3HEx",
+    "QuipuSwap hDAO old": "KT1Qm3urGqkRsWsovGzNb2R81c3dSfxpteHG",
+    "QuipuSwap hDAO": "KT1QxLqukyfohPV5kPkw97Rs6cw1DDDvYgbB"
 }
 
 

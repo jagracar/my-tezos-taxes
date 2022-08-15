@@ -67,9 +67,10 @@ for t in raw_transactions:
 
     # Check if it's an internal transaction between the user wallets
     transaction["internal"] = (
-        ((transaction["initiator"] in user_wallets) or (transaction["sender"] in user_wallets)) and
+        #((transaction["initiator"] in user_wallets) or (transaction["sender"] in user_wallets)) and
+        (transaction["sender"] in user_wallets) and
         (transaction["target"] in user_wallets))
-
+ 
     # Ignore internal transactions for the tax calculations
     transaction["ignore"] = transaction["internal"]
 
@@ -186,6 +187,17 @@ for t in raw_transactions:
             transaction["token_id"] = transaction["parameters"]["itokenid"]
             transaction["token_editions"] = int(transaction["parameters"]["iamount"])
             transaction["token_address"] = TOKENS["Rarible token"]
+        elif transaction["target"] == SMART_CONTRACTS["Tezzardz minter"]:
+            transaction["kind"] = "Tezzardz mint"
+            transaction["collect"] = True
+            transaction["token_editions"] = int(transaction["parameters"])
+            transaction["token_address"] = TOKENS["Tezzardz"]
+        elif transaction["target"] == TOKENS["Tezzardz"]:
+            transaction["kind"] = "Tezzardz mint"
+            transaction["collect"] = True
+            transaction["token_id"] = transaction["parameters"]["token_id"]
+            transaction["token_editions"] = int(transaction["parameters"]["amount"])
+            transaction["token_address"] = TOKENS["Tezzardz"]
         elif transaction["target"] == SMART_CONTRACTS["GOGOs minter"]:
             transaction["kind"] = "GOGOs mint"
             transaction["collect"] = True
@@ -263,16 +275,20 @@ for t in raw_transactions:
         transaction["token_id"] = "0"
         transaction["token_editions"] = int(transaction["parameters"]["amount"])
         transaction["token_address"] = TOKENS["Materia"]
-    elif (transaction["entrypoint"] == "buy") and (transaction["target"] == SMART_CONTRACTS["Skeles minter"]):
-        transaction["kind"] = "Skeles mint"
-        transaction["collect"] = True
-        transaction["token_editions"] = int(transaction["parameters"])
-        transaction["token_address"] = TOKENS["Skeles"]
+    elif (transaction["entrypoint"] == "buy"):
+        if transaction["target"] == SMART_CONTRACTS["Skeles minter"]:
+            transaction["kind"] = "Skeles mint"
+            transaction["collect"] = True
+            transaction["token_editions"] = int(transaction["parameters"])
+            transaction["token_address"] = TOKENS["Skeles"]
     elif transaction["entrypoint"] == "execute":
         if transaction["target"] == TOKENS["Tezos domain token"]:
             transaction["kind"] = "Tezos domain mint"
             transaction["collect"] = True
             transaction["token_address"] = TOKENS["Tezos domain token"]
+    elif transaction["entrypoint"] == "create_artist_collection":
+        if transaction["target"] == SMART_CONTRACTS["objkt.com Minting Factory"]:
+            transaction["kind"] = "create objkt.com collection"
 
     # Check if the transaction is connected with a token transfer
     if transaction["entrypoint"] == "transfer":
@@ -294,6 +310,11 @@ for t in raw_transactions:
                             transaction["kind"] = "receive " + token_aliases[transaction["target"]]
                             transaction["token_id"] = ttt["token_id"]
                             transaction["token_editions"] = int(ttt["amount"])
+
+            if (transaction["kind"] == None) and (transaction["initiator"] in user_wallets):
+                transaction["kind"] = "send " + token_aliases[transaction["target"]]
+                transaction["token_id"] = transaction["parameters"][0][txs_key][0]["token_id"]
+                transaction["token_editions"] = int(transaction["parameters"][0][txs_key][0]["amount"])
         elif transaction["target"] in objktcom_collections:
             transaction["token_address"] = transaction["target"]
 
@@ -308,6 +329,11 @@ for t in raw_transactions:
                             transaction["kind"] = "receive objkt.com collection token"
                             transaction["token_id"] = ttt["token_id"]
                             transaction["token_editions"] = int(ttt["amount"])
+
+            if (transaction["kind"] == None) and (transaction["initiator"] in user_wallets):
+                transaction["kind"] = "send objkt.com collection token"
+                transaction["token_id"] = transaction["parameters"][0][txs_key][0]["token_id"]
+                transaction["token_editions"] = int(transaction["parameters"][0][txs_key][0]["amount"])
         elif transaction["target"] in fa2_tokens:
             transaction["token_address"] = transaction["target"]
 
@@ -322,6 +348,11 @@ for t in raw_transactions:
                             transaction["kind"] = "receive " + fa2_tokens[transaction["target"]]
                             transaction["token_id"] = ttt["token_id"]
                             transaction["token_editions"] = int(ttt["amount"])
+
+            if (transaction["kind"] == None) and (transaction["initiator"] in user_wallets):
+                transaction["kind"] = "send " + fa2_tokens[transaction["target"]]
+                transaction["token_id"] = transaction["parameters"][0][txs_key][0]["token_id"]
+                transaction["token_editions"] = int(transaction["parameters"][0][txs_key][0]["amount"])
         elif transaction["target"] in fa12_tokens:
             transaction["token_id"] = "0"
             transaction["token_editions"] = int(transaction["parameters"]["value"])
@@ -336,6 +367,11 @@ for t in raw_transactions:
             transaction["kind"] = "burn " + token_aliases[transaction["target"]]
             transaction["token_id"] = transaction["parameters"]["token_id"]
             transaction["token_editions"] = int(transaction["parameters"]["amount"])
+            transaction["token_address"] = transaction["target"]
+        elif transaction["target"] == TOKENS["Rarible token"]:
+            transaction["kind"] = "burn " + token_aliases[transaction["target"]]
+            transaction["token_id"] = transaction["parameters"]["itokenid"]
+            transaction["token_editions"] = int(transaction["parameters"]["iamount"])
             transaction["token_address"] = transaction["target"]
 
     # Check if the transaction is connected with a token update operator
@@ -432,6 +468,9 @@ for t in raw_transactions:
         elif transaction["target"] == SMART_CONTRACTS["typed marketplace"]:
             transaction["kind"] = "typed cancel swap"
             transaction["token_editions"] = None
+        if transaction["target"] == SMART_CONTRACTS["versum marketplace"]:
+            transaction["kind"] = "versum cancel swap"
+            transaction["token_editions"] = None
         elif transaction["target"] == SMART_CONTRACTS["8scribo marketplace"]:
             transaction["kind"] = "8scribo cancel swap"
             transaction["token_editions"] = None
@@ -457,21 +496,43 @@ for t in raw_transactions:
             transaction["token_id"] = transaction["parameters"]["gentk"]["id"]
             transaction["token_editions"] = 1
             transaction["token_address"] = TOKENS["GENTK v1"] if transaction["parameters"]["gentk"]["id"] == "0" else TOKENS["GENTK v2"]
+    elif transaction["entrypoint"] == "offer":
+        if transaction["target"] == SMART_CONTRACTS["FXHASH marketplace v1"]:
+            transaction["kind"] = "FXHASH swap"
+            transaction["token_id"] = transaction["parameters"]["objkt_id"]
+            transaction["token_editions"] = 1
+            transaction["token_address"] = TOKENS["GENTK v1"]
     elif transaction["entrypoint"] == "listing_cancel":
         if transaction["target"] == SMART_CONTRACTS["FXHASH marketplace v2"]:
             transaction["kind"] = "FXHASH cancel swap"
             transaction["token_editions"] = None
+    elif transaction["entrypoint"] == "cancel_offer":
+        if transaction["target"] == SMART_CONTRACTS["FXHASH marketplace v1"]:
+            transaction["kind"] = "FXHASH cancel swap"
+            transaction["token_editions"] = None
+    if transaction["entrypoint"] == "create_swap":
+        if transaction["target"] == SMART_CONTRACTS["versum marketplace"]:
+            transaction["kind"] = "versum swap"
+            transaction["token_id"] = transaction["parameters"]["token"]["nat"]
+            transaction["token_editions"] = int(transaction["parameters"]["token_amount"])
+            transaction["token_address"] = transaction["parameters"]["token"]["address"]
 
     # Check if the transaction is connected with bids or offers
     if transaction["entrypoint"] == "bid":
-        if transaction["target"] == SMART_CONTRACTS["objkt.com marketplace v1"]:
+        if transaction["target"] in [SMART_CONTRACTS["objkt.bid Legacy"], SMART_CONTRACTS["objkt.com marketplace v1"]]:
             transaction["kind"] = "objkt.com offer"
             transaction["token_editions"] = 1
-        elif transaction["target"] == SMART_CONTRACTS["objkt.com English Auctions v2"]:
+        elif transaction["target"] in [SMART_CONTRACTS["objkt.com English Auctions Old"], SMART_CONTRACTS["objkt.com English Auctions v1"], SMART_CONTRACTS["objkt.com English Auctions v2"]]:
             transaction["kind"] = "objkt.com bid in English auction"
+        elif transaction["target"] == SMART_CONTRACTS["versum marketplace"]:
+            transaction["kind"] = "versum bid in auction"
     elif transaction["entrypoint"] == "retract_bid":
-        if transaction["target"] == SMART_CONTRACTS["objkt.com marketplace v1"]:
+        if transaction["target"] in [SMART_CONTRACTS["objkt.bid Legacy"], SMART_CONTRACTS["objkt.com marketplace v1"]]:
             transaction["kind"] = "objkt.com cancel offer"
+            transaction["token_editions"] = 1
+    elif transaction["entrypoint"] == "swap":
+        if transaction["target"] == SMART_CONTRACTS["objkt.bid Legacy"]:
+            transaction["kind"] = "objkt.com accept offer"
             transaction["token_editions"] = 1
     elif transaction["entrypoint"] == "fulfill_bid":
         if transaction["target"] == SMART_CONTRACTS["objkt.com marketplace v1"]:
@@ -512,6 +573,40 @@ for t in raw_transactions:
         if transaction["target"] == SMART_CONTRACTS["versum marketplace"]:
             transaction["kind"] = "versum accept offer"
             transaction["token_editions"] = 1
+    elif transaction["entrypoint"] == "create_auction":
+        if transaction["target"] in [SMART_CONTRACTS["objkt.com English Auctions Old"], SMART_CONTRACTS["objkt.com English Auctions v1"]]:
+            transaction["kind"] = "objkt.com create English auction"
+            transaction["token_id"] = transaction["parameters"]["objkt_id"]
+            transaction["token_editions"] = 1
+            transaction["token_address"] = transaction["parameters"]["fa2"]
+        elif transaction["target"] == SMART_CONTRACTS["objkt.com English Auctions v2"]:
+            transaction["kind"] = "objkt.com create English auction"
+            transaction["token_id"] = transaction["parameters"]["token"]["token_id"]
+            transaction["token_editions"] = 1
+            transaction["token_address"] = transaction["parameters"]["token"]["address"]
+        elif transaction["target"] == SMART_CONTRACTS["objkt.com Dutch Auctions v1"]:
+            transaction["kind"] = "objkt.com create Dutch auction"
+            transaction["token_id"] = transaction["parameters"]["objkt_id"]
+            transaction["token_editions"] = 1
+            transaction["token_address"] = transaction["parameters"]["fa2"]
+        elif transaction["target"] == SMART_CONTRACTS["objkt.com Dutch Auctions v2"]:
+            transaction["kind"] = "objkt.com create Dutch auction"
+            transaction["token_id"] = transaction["parameters"]["token"]["token_id"]
+            transaction["token_editions"] = int(transaction["parameters"]["editions"])
+            transaction["token_address"] = transaction["parameters"]["token"]["address"]
+        elif transaction["target"] == SMART_CONTRACTS["versum marketplace"]:
+            transaction["kind"] = "versum create English auction"
+            transaction["token_id"] = transaction["parameters"]["token"]["nat"]
+            transaction["token_editions"] = int(transaction["parameters"]["token_amount"])
+            transaction["token_address"] = transaction["parameters"]["token"]["address"]
+    elif transaction["entrypoint"] == "cancel_auction":
+        if transaction["target"] in [SMART_CONTRACTS["objkt.com English Auctions Old"], SMART_CONTRACTS["objkt.com English Auctions v1"], SMART_CONTRACTS["objkt.com English Auctions v2"]]:
+            transaction["kind"] = "objkt.com cancel English auction"
+        elif transaction["target"]in [SMART_CONTRACTS["objkt.com Dutch Auctions v1"], SMART_CONTRACTS["objkt.com Dutch Auctions v2"]]:
+            transaction["kind"] = "objkt.com cancel Dutch auction"
+    elif transaction["entrypoint"] == "withdraw":
+        if transaction["target"] == SMART_CONTRACTS["versum marketplace"]:
+            transaction["kind"] = "versum accept offer"
 
     # Check if the transaction is connected with collects
     if transaction["entrypoint"] == "collect":
@@ -660,6 +755,9 @@ for t in raw_transactions:
     if transaction["target"] in [SMART_CONTRACTS["Interactive experiment 1"], SMART_CONTRACTS["Interactive experiment 2"], SMART_CONTRACTS["Interactive experiment 3"]]:
         transaction["kind"] = "Interactive experiment operation"
 
+    if transaction["target"] in [SMART_CONTRACTS["TezID Controller"], SMART_CONTRACTS["TezID Store"]]:
+        transaction["kind"] = "TezID operation"
+
     if transaction["target"] == SMART_CONTRACTS["teia vote"]:
         transaction["kind"] = "teia vote"
 
@@ -682,6 +780,23 @@ for t in raw_transactions:
     if transaction["entrypoint"] == "default":
         if transaction["target"] in [SMART_CONTRACTS["my tzprofile contract 1"], SMART_CONTRACTS["my tzprofile contract 2"]]:
             transaction["kind"] = "tzprofile operation"
+
+    if transaction["target"] == SMART_CONTRACTS["Ukraine war donations contract"]:
+        transaction["donation"] = True
+
+    if transaction["entrypoint"] == "tokenToTezPayment":
+        if transaction["target"] in [SMART_CONTRACTS["QuipuSwap hDAO old"], SMART_CONTRACTS["QuipuSwap hDAO"]]:
+            transaction["kind"] = "sell hDAO in QuipuSwap"
+            transaction["token_id"] = "0"
+            transaction["tolen_amount"] = int(transaction["parameters"]["amount"])
+            transaction["tolen_address"] = TOKENS["hDAO"]
+    elif transaction["entrypoint"] == "tezToTokenPayment":
+        if transaction["target"] in [SMART_CONTRACTS["QuipuSwap hDAO old"], SMART_CONTRACTS["QuipuSwap hDAO"]]:
+            transaction["kind"] = "buy hDAO in QuipuSwap"
+
+    if transaction["entrypoint"] == "accept_invitation":
+        if transaction["target"] == SMART_CONTRACTS["objkt.com Minting Factory"]:
+            transaction["kind"] = "accept objkt.com invitation"
 
     # Print some warning if a transaction was not completely processed
     if transaction["kind"] is None:
@@ -802,9 +917,9 @@ with open(os.path.join(data_directory, file_name), "w") as file:
         data = (
             op["timestamp"],
             op["level"],
-            aliases.get(op["initiator"], op["initiator"]) if op["initiator"] is not None else "",
-            aliases.get(op["sender"], op["sender"]),
-            aliases.get(op["target"], op["target"]) if op["target"] is not None else "",
+            aliases.get(op["initiator"], op["initiator"]).replace(",", " ") if op["initiator"] is not None else "",
+            aliases.get(op["sender"], op["sender"]).replace(",", " "),
+            aliases.get(op["target"], op["target"]).replace(",", " ") if op["target"] is not None else "",
             op["kind"],
             op["internal"],
             op["mint"],
@@ -823,7 +938,7 @@ with open(os.path.join(data_directory, file_name), "w") as file:
             op["fees"],
             op["tez_to_euros"],
             op["tez_to_usd"],
-            token_alias,
+            token_alias.replace(",", " "),
             op["token_id"] if op["token_id"] is not None else "",
             op["token_editions"] if op["token_editions"] is not None else "",
             token_address if token_address is not None else "",
