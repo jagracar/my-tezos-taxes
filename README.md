@@ -32,3 +32,9 @@ python3 calculateTaxes.py
 ```
 
 After few seconds you will have the tax report and some csv files will be saved in the [data directory](data).
+
+You can check to see what category of transactions are unexplained using:
+
+```bash
+python3 checkUnknown.py
+```
