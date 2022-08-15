@@ -48,7 +48,7 @@ for t in raw_transactions:
         "collect": False,
         "art_sale": False,
         "collection_sale": False,
-        "stacking": False,
+        "staking": False,
         "origination": False,
         "prize": False,
         "donation": False,
@@ -118,7 +118,7 @@ for t in raw_transactions:
         elif transaction["target"] in user_wallets:
             if transaction["sender"] in baker_wallets:
                 transaction["kind"] = "receive tez from staking"
-                transaction["stacking"] = True
+                transaction["staking"] = True
             else:
                 transaction["kind"] = "receive tez"
         else:
@@ -707,7 +707,7 @@ for o in raw_originations:
         "collect": False,
         "art_sale": False,
         "collection_sale": False,
-        "stacking": False,
+        "staking": False,
         "origination": True,
         "prize": False,
         "donation": False,
@@ -772,7 +772,7 @@ for token_address, token_alias in fa2_tokens.items():
 file_name = "operations_%s.csv" % list(user_wallets.keys())[0]
 columns = [
     "timestamp", "level", "initiator", "sender", "target", "kind", "internal",
-    "mint", "collect", "art_sale", "collection_sale", "stacking", "origination",
+    "mint", "collect", "art_sale", "collection_sale", "staking", "origination",
     "prize", "donation", "ignore", "is_initiator", "is_sender", "is_target",
     "amount", "fees", "tez_to_euros", "tez_to_usd", "token_name", "token_id",
     "token_editions", "token_address", "entrypoint", "hash", "comment"]
@@ -811,7 +811,7 @@ with open(os.path.join(data_directory, file_name), "w") as file:
             op["collect"],
             op["art_sale"],
             op["collection_sale"],
-            op["stacking"],
+            op["staking"],
             op["origination"],
             op["prize"],
             op["donation"],
