@@ -1,4 +1,5 @@
 import os.path
+import csv
 from taxUtils import *
 
 # Define the data directory
@@ -896,9 +897,9 @@ format = [
     "%r", "%r", "%r", "%r", "%r", "%r", "%r", "%f", "%f", "%f", "%f", "%s",
     "%s", "%s", "%s", "%s", "%s", "%s"]
 
-with open(os.path.join(data_directory, file_name), "w") as file:
-    # Write the header
-    file.write(",".join(columns) + "\n")
+with open(os.path.join(data_directory, file_name), "w", newline="\n") as outfile:
+    writer = csv.writer(outfile)
+    writer.writerow(columns)
 
     # Loop over the combined operations
     for op in combined_operations:
@@ -914,7 +915,7 @@ with open(os.path.join(data_directory, file_name), "w") as file:
             token_alias = aliases[token_address]
 
         # Write the operation data in the output file
-        data = (
+        data = [
             op["timestamp"],
             op["level"],
             aliases.get(op["initiator"], op["initiator"]).replace(",", " ") if op["initiator"] is not None else "",
@@ -944,6 +945,5 @@ with open(os.path.join(data_directory, file_name), "w") as file:
             token_address if token_address is not None else "",
             op["entrypoint"] if op["entrypoint"] is not None else "",
             op["hash"],
-            op["comment"])
-        text = ",".join(format) % data
-        file.write(text + "\n")
+            op["comment"]]
+        writer.writerow(data)
