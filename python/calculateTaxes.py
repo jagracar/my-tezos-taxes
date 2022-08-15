@@ -50,13 +50,13 @@ operations["prize_amount_fiat"] = operations["prize_amount"] * tez_to_fiat
 
 # Check the tez amount received by the user from staking rewards
 # (ignore operations should not be counted)
-cond = operations["is_target"] & ~operations["ignore"] & operations["stacking"]
-operations["stacking_rewards_amount"] = np.where(cond, operations["amount"], 0)
-operations["stacking_rewards_amount_fiat"] = operations["stacking_rewards_amount"] * tez_to_fiat
+cond = operations["is_target"] & ~operations["ignore"] & operations["staking"]
+operations["staking_rewards_amount"] = np.where(cond, operations["amount"], 0)
+operations["staking_rewards_amount_fiat"] = operations["staking_rewards_amount"] * tez_to_fiat
 
 # Check the tez amount received by the user from other reasons
 # (ignore operations should not be counted)
-cond = operations["is_target"] & ~operations["ignore"] & ~operations["art_sale"] & ~operations["collection_sale"] & ~operations["prize"] & ~operations["stacking"]
+cond = operations["is_target"] & ~operations["ignore"] & ~operations["art_sale"] & ~operations["collection_sale"] & ~operations["prize"] & ~operations["staking"]
 operations["received_amount_others"] = np.where(cond, operations["amount"], 0)
 operations["received_amount_others_fiat"] = operations["received_amount_others"] * tez_to_fiat
 
@@ -109,8 +109,8 @@ print("   %.2f tez (%.2f %s) came from reselling NFTs minted by other artists." 
     tax_operations["collection_sale_amount"].sum(), tax_operations["collection_sale_amount_fiat"].sum(), fiat_coin))
 print("   %.2f tez (%.2f %s) came from prizes (hackathons, community rewards, etc)." % (
     tax_operations["prize_amount"].sum(), tax_operations["prize_amount_fiat"].sum(), fiat_coin))
-print("   %.2f tez (%.2f %s) came from stacking rewards." % (
-    tax_operations["stacking_rewards_amount"].sum(), tax_operations["stacking_rewards_amount_fiat"].sum(), fiat_coin))
+print("   %.2f tez (%.2f %s) came from staking rewards." % (
+    tax_operations["staking_rewards_amount"].sum(), tax_operations["staking_rewards_amount_fiat"].sum(), fiat_coin))
 print("   %.2f tez (%.2f %s) came from other sources." % (
     tax_operations["received_amount_others"].sum(), tax_operations["received_amount_others_fiat"].sum(), fiat_coin))
 print("\n Total amount of tez spent with the user wallets: %.2f tez (%.2f %s).\n" % (
@@ -226,8 +226,8 @@ print("   %.2f tez (%.2f %s) from trades of NFTs minted by other artists." % (
     sold_tokens[cond]["sale_gains"].sum(), sold_tokens[cond]["sale_gains_fiat"].sum(), fiat_coin))
 print("   %.2f tez (%.2f %s) from prizes (hackathons, community rewards, etc)." % (
     tax_operations["prize_amount"].sum(), tax_operations["prize_amount_fiat"].sum(), fiat_coin))
-print("   %.2f tez (%.2f %s) from stacking rewards." % (
-    tax_operations["stacking_rewards_amount"].sum(), tax_operations["stacking_rewards_amount_fiat"].sum(), fiat_coin))
+print("   %.2f tez (%.2f %s) from staking rewards." % (
+    tax_operations["staking_rewards_amount"].sum(), tax_operations["staking_rewards_amount_fiat"].sum(), fiat_coin))
 print("")
 
 """
