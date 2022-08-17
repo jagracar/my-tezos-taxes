@@ -463,25 +463,57 @@ def get_user_mints(user_wallets):
     """
     query = """
         query UserMints {
-            events(where: {artist_address: {_in: ["%s"]}, type: {_like: "%s"}}, order_by: {timestamp: asc}, limit: **LIMIT**, offset: **OFFSET**) {
+            events(where: {artist_address: {_in: ["%s"]}, type: {_like: "%%MINT%%"}, implements: {_is_null: true}}, order_by: {timestamp: asc}, limit: **LIMIT**, offset: **OFFSET**) {
                 type
-                editions
                 timestamp
                 ophash
-                token {
-                      artist_address
-                      token_id
-                      symbol
-                      platform
-                      fa2_address
-                      editions
-                }
+                token_id
+                editions
+                fa2_address
             }
         }
-    """ % ('","'.join(user_wallets), "%MINT%")
+    """ % '","'.join(user_wallets)
     mints = get_teztok_query_result({"query": query}, kind="events")
 
     return {mint["ophash"]: mint for mint in mints}
+
+
+def get_user_swaps(user_wallets):
+    """Returns the complete list of user swap operations.
+
+    Parameters
+    ----------
+    user_wallets: list
+        The user wallet addresses.
+
+    Returns
+    -------
+    dict
+        A python dictionary with user swap operations information.
+
+    """
+    query = """
+        query UserSwaps {
+            events(where: {seller_address: {_in: ["%s"]}, implements: {_is_null: true}}, order_by: {timestamp: asc}, limit: **LIMIT**, offset: **OFFSET**) {
+                type
+                timestamp
+                ophash
+                ask_id
+                auction_id
+                bid_id
+                offer_id
+                swap_id
+                token_id
+                editions
+                amount
+                fa2_address
+                price
+            }
+        }
+    """ % ('","'.join(user_wallets))
+    swaps = get_teztok_query_result({"query": query}, kind="events")
+
+    return {swap["ophash"]: swap for swap in swaps}
 
 
 def get_user_fulfilled_offers(user_wallets):
@@ -504,6 +536,8 @@ def get_user_fulfilled_offers(user_wallets):
                 type
                 offer_id
                 bid_id
+                token_id
+                fa2_address
             }
         }
     """ % ('","'.join(user_wallets))
@@ -512,13 +546,17 @@ def get_user_fulfilled_offers(user_wallets):
     offers = {}
 
     for offer in fulfilled_offers:
-        if offer["type"] not in offers:
-            offers[offer["type"]] = []
+        token_id = offer["token_id"]
+        token_address = offer["fa2_address"]
 
-        offers[offer["type"]].append(offer["offer_id"] if offer["offer_id"] is not None else offer["bid_id"])
+        if token_address not in offers:
+            offers[token_address] = {}
 
-    if "VERSUM_OFFER" in offers:
-        offers["VERSUM_MAKE_OFFER"] = offers["VERSUM_OFFER"]
+        if token_id not in offers[token_address]:
+            offers[token_address][token_id] = []
+
+        offers[token_address][token_id].append(
+            offer["offer_id"] if offer["offer_id"] is not None else offer["bid_id"])
 
     return offers
 
@@ -537,26 +575,21 @@ def get_user_collects(user_wallets):
         A python dictionary with user collect operations information.
 
     """
-    # Get the user collects
+    # Get the user collect operations
     query = """
         query UserCollects {
             events(where: {buyer_address: {_in: ["%s"]}}, order_by: {timestamp: asc}, limit: **LIMIT**, offset: **OFFSET**) {
                 type
                 timestamp
                 ophash
-                amount
-                price
                 implements
                 offer_id
                 bid_id
-                token {
-                    artist_address
-                    token_id
-                    symbol
-                    platform
-                    fa2_address
-                    editions
-                }
+                token_id
+                editions
+                amount
+                fa2_address
+                price
             }
         }
     """ % ('","'.join(user_wallets))
@@ -567,24 +600,110 @@ def get_user_collects(user_wallets):
 
     # Indicate which offers were fulfilled
     for collect in collects:
-        collect["offer_fulfilled"] = False
+        offer_id = collect["offer_id"] if collect["offer_id"] is not None else collect["bid_id"]
+        collect["offer_fulfilled"] = None
 
-        if collect["offer_id"] is not None or collect["bid_id"] is not None:
-            if collect["type"] in fulfilled_offers:
-                if collect["offer_id"] is not None:
-                    collect["offer_fulfilled"] = collect["offer_id"] in fulfilled_offers[collect["type"]]
-                else:
-                    collect["offer_fulfilled"] = collect["bid_id"] in fulfilled_offers[collect["type"]]
+        if offer_id is not None:
+            token_id = collect["token_id"]
+            token_address = collect["fa2_address"]
 
-        if collect["type"] == "FX_COLLECT":
-            collect["offer_fulfilled"] = True
+            if token_address in fulfilled_offers and token_id in fulfilled_offers[token_address]:
+                 collect["offer_fulfilled"] = offer_id in fulfilled_offers[token_address][token_id]
 
     return {collect["ophash"]: collect for collect in collects}
 
 
+def get_user_won_auctions(user_wallets):
+    """Returns the complete list of user won auction operations.
+
+    Parameters
+    ----------
+    user_wallets: list
+        The user wallet addresses.
+
+    Returns
+    -------
+    dict
+        A python dictionary with user won auction operations information.
+
+    """
+    query = """
+        query UserWonAuctions {
+            events(where: {buyer_address: {_in: ["%s"]}, implements: {_eq: "SALE"}, auction_id: {_is_null: false}}, order_by: {timestamp: asc}, limit: **LIMIT**, offset: **OFFSET**) {
+                type
+                auction_id
+                token_id
+                fa2_address
+            }
+        }
+    """ % ('","'.join(user_wallets))
+    won_auctions = get_teztok_query_result({"query": query}, kind="events")
+
+    auctions = {}
+
+    for auction in won_auctions:
+        token_id = auction["token_id"]
+        token_address = auction["fa2_address"]
+
+        if token_address not in auctions:
+            auctions[token_address] = {}
+
+        if token_id not in auctions[token_address]:
+            auctions[token_address][token_id] = []
+
+        auctions[token_address][token_id].append(auction["auction_id"])
+
+    return auctions
+
+
+def get_user_auction_bids(user_wallets):
+    """Returns the complete list of user auction bid operations.
+
+    Parameters
+    ----------
+    user_wallets: list
+        The user wallet addresses.
+
+    Returns
+    -------
+    dict
+        A python dictionary with user auction bid operations information.
+
+    """
+    # Get the user auction bid operations
+    query = """
+        query UserAuctionBids {
+            events(where: {bidder_address: {_in: ["%s"]}}, order_by: {timestamp: asc}, limit: **LIMIT**, offset: **OFFSET**) {
+                type
+                timestamp
+                ophash
+                auction_id
+                token_id
+                fa2_address
+                bid
+            }
+        }
+    """ % ('","'.join(user_wallets))
+    auction_bids = get_teztok_query_result({"query": query}, kind="events", timeout=60)
+
+    # Get the won auctions
+    won_auctions = get_user_won_auctions(user_wallets)
+
+    # Indicate which auctions were won
+    for bid in auction_bids:
+        token_id = bid["token_id"]
+        token_address = bid["fa2_address"]
+        bid["won_auction"] = False
+
+        if token_address in won_auctions and token_id in won_auctions[token_address]:
+            bid["won_auction"] = bid["auction_id"] in won_auctions[token_address][token_id]
+
+    return {bid["ophash"]: bid for bid in auction_bids}
+
+
 def get_user_art_sales(user_wallets):
-    """Returns the complete list of user sale operations for tokens that the user
-    has minted.
+    """Returns the complete list of user sale operations for tokens that the
+    user has minted.
 
     Parameters
     ----------
@@ -602,60 +721,30 @@ def get_user_art_sales(user_wallets):
     minted_tokens = {}
 
     for mint in mints.values():
-        fa2_address = mint["token"]["fa2_address"]
-        token_id = mint["token"]["token_id"]
+        token_address = mint["fa2_address"]
 
-        if fa2_address not in minted_tokens:
-            minted_tokens[fa2_address] = []
+        if token_address not in minted_tokens:
+            minted_tokens[token_address] = []
 
-        minted_tokens[fa2_address].append(token_id)
+        minted_tokens[token_address].append(mint["token_id"])
 
-    # Get the user art sales
+    # Get the user art sales for each minted token
     art_sales = []
 
-    for fa2_address, token_ids in minted_tokens.items():
+    for token_address, token_ids in minted_tokens.items():
         query = """
             query UserArtSales {
-                events(where: {seller_address: {_in: ["%s"]}, implements: {_is_null: true}, _or: [{fa2_address: {_eq: "%s"}, token_id: {_in: ["%s"]}}]}, order_by: {timestamp: asc}, limit: **LIMIT**, offset: **OFFSET**) {
+                events(where: {implements: {_eq: "SALE"}, fa2_address: {_eq: "%s"}, token_id: {_in: ["%s"]}}, order_by: {timestamp: asc}, limit: **LIMIT**, offset: **OFFSET**) {
                     type
                     timestamp
                     ophash
+                    token_id
                     amount
+                    fa2_address
                     price
-                    implements
-                    token {
-                        artist_address
-                        token_id
-                        symbol
-                        platform
-                        fa2_address
-                        editions
-                    }
                 }
             }
-        """ % ('","'.join(user_wallets), fa2_address, '","'.join(token_ids))
-        art_sales += get_teztok_query_result({"query": query}, kind="events")
-
-        query = """
-            query UserArtSales {
-                events(where: {implements: {_eq: "SALE"}, _or: [{fa2_address: {_eq: "%s"}, token_id: {_in: ["%s"]}}]}, order_by: {timestamp: asc}, limit: **LIMIT**, offset: **OFFSET**) {
-                    type
-                    timestamp
-                    ophash
-                    amount
-                    price
-                    implements
-                    token {
-                        artist_address
-                        token_id
-                        symbol
-                        platform
-                        fa2_address
-                        editions
-                    }
-                }
-            }
-        """ % (fa2_address, '","'.join(token_ids))
+        """ % (token_address, '","'.join(token_ids))
         art_sales += get_teztok_query_result({"query": query}, kind="events")
 
     return {sale["ophash"]: sale for sale in art_sales}
@@ -678,21 +767,14 @@ def get_user_collection_sales(user_wallets):
     """
     query = """
         query UserCollectionSales {
-            events(where: {seller_address: {_in: ["%s"]}, token: {artist_address: {_nin: ["%s"]}}}, order_by: {timestamp: asc}, limit: **LIMIT**, offset: **OFFSET**) {
+            events(where: {seller_address: {_in: ["%s"]}, implements: {_eq: "SALE"}, token: {artist_address: {_nin: ["%s"]}}}, order_by: {timestamp: asc}, limit: **LIMIT**, offset: **OFFSET**) {
                 type
                 timestamp
                 ophash
+                token_id
                 amount
+                fa2_address
                 price
-                implements
-                token {
-                    artist_address
-                    token_id
-                    symbol
-                    platform
-                    fa2_address
-                    editions
-                }
             }
         }
     """ % ('","'.join(user_wallets), '","'.join(user_wallets))

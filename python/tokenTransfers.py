@@ -1,3 +1,4 @@
+import csv
 import os.path
 from taxUtils import *
 
@@ -78,9 +79,11 @@ format = [
     "%s", "%i", "%s", "%s", "%r", "%r", "%r", "%r", "%r", "%s", "%s", "%s",
     "%s"]
 
-with open(os.path.join(data_directory, file_name), "w") as file:
+with open(os.path.join(data_directory, file_name), "w", newline="\n") as output_file:
+    writer = csv.writer(output_file)
+
     # Write the header
-    file.write(",".join(columns) + "\n")
+    writer.writerow(columns)
 
     # Loop over the token transfers
     for tt in token_transfers:
@@ -96,7 +99,7 @@ with open(os.path.join(data_directory, file_name), "w") as file:
             alias = aliases[token_address]
 
         # Write the token transfer data in the output file
-        data = (
+        data = [
             tt["timestamp"],
             tt["level"],
             aliases.get(tt["from"], tt["from"]).replace(",", " ") if tt["from"] is not None else "",
@@ -109,6 +112,5 @@ with open(os.path.join(data_directory, file_name), "w") as file:
             alias.replace(",", " "),
             tt["token_id"] if tt["token_id"] is not None else "",
             tt["token_editions"] if tt["token_editions"] is not None else "",
-            token_address if token_address is not None else "")
-        text = ",".join(format) % data
-        file.write(text + "\n")
+            token_address if token_address is not None else ""]
+        writer.writerow(data)
