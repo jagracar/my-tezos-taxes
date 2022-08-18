@@ -463,7 +463,7 @@ def get_user_mints(user_wallets):
     """
     query = """
         query UserMints {
-            events(where: {artist_address: {_in: ["%s"]}, type: {_like: "%%MINT%%"}, implements: {_is_null: true}}, order_by: {timestamp: asc}, limit: **LIMIT**, offset: **OFFSET**) {
+            events(where: {artist_address: {_in: ["%s"]}, type: {_like: "%%MINT%%", _nlike: "%%MINT_ISSUER%%"}, implements: {_is_null: true}}, order_by: {timestamp: asc}, limit: **LIMIT**, offset: **OFFSET**) {
                 type
                 timestamp
                 ophash
@@ -804,7 +804,7 @@ def fix_missing_token_information(tokens, token_transfers, kind):
                 transfers = token_transfers[cond]
                 tokens.loc[index, "token_name"] = transfers["token_name"].values[0]
                 tokens.loc[index, "token_id"] = transfers["token_id"].values[0]
-                tokens.loc[index, "token_editions"] = transfers["token_editions"].values[0]
+                tokens.loc[index, "token_editions"] = str(transfers["token_editions"].values[0])
                 tokens.loc[index, "token_address"] = transfers["token_address"].values[0]
 
     return tokens
