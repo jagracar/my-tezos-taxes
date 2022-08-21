@@ -6,14 +6,17 @@ from taxUtils import *
 data_directory = "../data"
 
 # Load the user wallets
-user_wallets = read_json_file(os.path.join(data_directory, "user_wallets.json"))
+user_wallets = read_json_file(os.path.join(data_directory, "input", "user_wallets.json"))
+user_first_wallet = list(user_wallets.keys())[0]
 
 # Load the user baker wallets
-baker_wallets = read_json_file(os.path.join(data_directory, "baker_wallets.json"))
+baker_wallets = read_json_file(os.path.join(data_directory, "input", "baker_wallets.json"))
 
 # Get the user raw transactions and originations information
 raw_transactions = get_user_transactions(user_wallets)
 raw_originations = get_user_originations(user_wallets)
+raw_reveals = get_user_reveals(user_wallets)
+raw_delegations = get_user_delegations(user_wallets)
 
 # Get the user mints, swaps, collects, auction bids, art sales and collection sales
 user_mints = get_user_mints(user_wallets)
@@ -39,35 +42,40 @@ burn_addresses = ["tz1burnburnburnburnburnburnburjAYjjX"]
 
 # Process the raw transactions
 transactions = []
+unprocessed_transactions = []
 
 for t in raw_transactions:
     # Save the most relevant information
     transaction = {
         "timestamp": t["timestamp"],
         "level": t["level"],
+        "kind": None,
+        "entrypoint": t["parameter"]["entrypoint"] if "parameter" in t else None,
+        "parameters": t["parameter"]["value"] if "parameter" in t else None,
         "initiator": t["initiator"]["address"] if "initiator" in t else None,
         "sender": t["sender"]["address"],
         "target": t["target"]["address"],
-        "kind": None,
+        "applied": t["status"] == "applied",
         "internal": False,
+        "ignore": False,
         "mint": False,
         "collect": False,
+        "active_offer": False,
         "art_sale": False,
         "collection_sale": False,
         "staking": False,
         "origination": False,
+        "reveal": False,
+        "delegation": False,
         "prize": False,
         "donation": False,
-        "ignore": False,
         "amount": t["amount"] / 1e6,
-        "fees": (t["bakerFee"] + t["storageFee"] + t["allocationFee"]) / 1e6,
+        "fees": ((t["bakerFee"] + t["storageFee"] + t["allocationFee"]) / 1e6) if (t["status"] == "applied") else (t["bakerFee"] / 1e6),
         "tez_to_euros": t["quote"]["eur"],
         "tez_to_usd": t["quote"]["usd"],
         "token_id": None,
         "token_editions": None,
         "token_address": None,
-        "entrypoint": t["parameter"]["entrypoint"] if "parameter" in t else None,
-        "parameters": t["parameter"]["value"] if "parameter" in t else None,
         "hash": t["hash"],
         "comment": "",
         "teztok": False}
@@ -116,15 +124,17 @@ for t in raw_transactions:
         else:
             token_editions = 1
 
-        transaction["collect"] = (collect["implements"] == "SALE") or (collect["offer_fulfilled"] == True)
+        transaction["collect"] = (collect["implements"] == "SALE") or (collect["fulfilled_offer"] == True)
+        transaction["active_offer"] = collect["active_offer"] == True
         transaction["token_id"] = collect["token_id"]
         transaction["token_editions"] = token_editions
         transaction["token_address"] = collect["fa2_address"]
         transaction["teztok"] = True
 
-        # Ignore transactions associated to offers that were not fulfilled
+        # Ignore transactions associated to offers that were not fulfilled and
+        # are not active
         if collect["offer_id"] is not None or collect["bid_id"] is not None:
-            if not transaction["collect"]:
+            if (not transaction["collect"]) and (not transaction["active_offer"]):
                 transaction["ignore"] = True
 
     if hash in user_auction_bids:
@@ -757,9 +767,9 @@ for t in raw_transactions:
         if transaction["target"] == SMART_CONTRACTS["objkt.com Minting Factory"]:
             transaction["kind"] = "accept objkt.com invitation"
 
-    # Print some warning if a transaction was not completely processed
+    # Save the unprocessed raw transactions
     if transaction["kind"] is None:
-        print("The following transaction was not completely processed:\n%s\n" % t)
+        unprocessed_transactions.append(t)
 
     # Add the processed transaction
     transactions.append(transaction)
@@ -767,34 +777,38 @@ for t in raw_transactions:
 # Process the raw originations
 originations = []
 
-for o in raw_originations: 
+for o in raw_originations:
     # Save the most relevant information
     origination = {
         "timestamp": o["timestamp"],
         "level": o["level"],
+        "kind": "contract origination",
+        "entrypoint": None,
+        "parameters": None,
         "initiator": o["initiator"]["address"] if "initiator" in o else None,
         "sender": o["sender"]["address"],
         "target": None,
-        "kind": "contract origination",
+        "applied": o["status"] == "applied",
         "internal": False,
+        "ignore": False,
         "mint": False,
         "collect": False,
+        "active_offer": False,
         "art_sale": False,
         "collection_sale": False,
         "staking": False,
         "origination": True,
+        "reveal": False,
+        "delegation": False,
         "prize": False,
         "donation": False,
-        "ignore": False,
         "amount": o["contractBalance"] / 1e6,
-        "fees": (o["bakerFee"] + o["storageFee"] + o["allocationFee"]) / 1e6,
+        "fees": ((o["bakerFee"] + o["storageFee"] + o["allocationFee"]) / 1e6) if (o["status"] == "applied") else (o["bakerFee"] / 1e6),
         "tez_to_euros": o["quote"]["eur"],
         "tez_to_usd": o["quote"]["usd"],
         "token_id": None,
         "token_editions": None,
         "token_address": None,
-        "entrypoint": None,
-        "parameters": None,
         "hash": o["hash"],
         "comment": "",
         "teztok": False}
@@ -802,22 +816,97 @@ for o in raw_originations:
     # Add the processed origination
     originations.append(origination)
 
-# Combine the transactions and originations in a single array
-combined_operations = []
-counter = 0
-o = originations[counter] if counter < len(originations) else None
+# Process the raw reveals
+reveals = []
 
-for t in transactions:
-    if o is not None:
-        if o["level"] <= t["level"]:
-            combined_operations.append(o)
-            counter += 1
-            o = originations[counter] if counter < len(originations) else None
+for r in raw_reveals:
+    # Save the most relevant information
+    reveal = {
+        "timestamp": r["timestamp"],
+        "level": r["level"],
+        "kind": "reveal public key",
+        "entrypoint": None,
+        "parameters": None,
+        "initiator": None,
+        "sender": r["sender"]["address"],
+        "target": None,
+        "applied": r["status"] == "applied",
+        "internal": False,
+        "ignore": False,
+        "mint": False,
+        "collect": False,
+        "active_offer": False,
+        "art_sale": False,
+        "collection_sale": False,
+        "staking": False,
+        "origination": False,
+        "reveal": True,
+        "delegation": False,
+        "prize": False,
+        "donation": False,
+        "amount": 0,
+        "fees": r["bakerFee"] / 1e6,
+        "tez_to_euros": r["quote"]["eur"],
+        "tez_to_usd": r["quote"]["usd"],
+        "token_id": None,
+        "token_editions": None,
+        "token_address": None,
+        "hash": r["hash"],
+        "comment": "",
+        "teztok": False}
 
-    combined_operations.append(t)
+    # Add the processed reveal
+    reveals.append(reveal)
+
+# Process the raw delegations
+delegations = []
+
+for d in raw_delegations:
+    # Save the most relevant information
+    delegation = {
+        "timestamp": d["timestamp"],
+        "level": d["level"],
+        "kind": "delegation",
+        "entrypoint": None,
+        "parameters": None,
+        "initiator": d["initiator"]["address"] if "initiator" in d else None,
+        "sender": d["sender"]["address"],
+        "target": None,
+        "applied": d["status"] == "applied",
+        "internal": False,
+        "ignore": False,
+        "mint": False,
+        "collect": False,
+        "active_offer": False,
+        "art_sale": False,
+        "collection_sale": False,
+        "staking": False,
+        "origination": False,
+        "reveal": False,
+        "delegation": True,
+        "prize": False,
+        "donation": False,
+        "amount": 0,
+        "fees": d["bakerFee"] / 1e6,
+        "tez_to_euros": d["quote"]["eur"],
+        "tez_to_usd": d["quote"]["usd"],
+        "token_id": None,
+        "token_editions": None,
+        "token_address": None,
+        "hash": r["hash"],
+        "comment": "",
+        "teztok": False}
+
+    # Add the processed delegation
+    delegations.append(delegation)
+
+# Combine the transactions, originations and reveals in a single array
+combined_operations = combine_operations(transactions, originations)
+combined_operations = combine_operations(combined_operations, reveals)
+combined_operations = combine_operations(combined_operations, delegations)
 
 # Apply the operation corrections specified by the user
-operation_corrections = read_json_file(os.path.join(data_directory, "operation_corrections.json"))
+operation_corrections = read_json_file(os.path.join(data_directory, "input", "operation_corrections.json"))
 
 for operation in combined_operations:
     if operation["hash"] in operation_corrections:
@@ -844,26 +933,60 @@ for token_address, token_alias in fa2_tokens.items():
         aliases[token_address] = token_alias
 
 # Save the processed data in a csv file
-file_name = "operations_%s.csv" % list(user_wallets.keys())[0]
+file_name = "operations_%s.csv" % user_first_wallet
 columns = [
-    "timestamp", "level", "initiator", "sender", "target", "kind", "internal",
-    "mint", "collect", "art_sale", "collection_sale", "staking", "origination",
-    "prize", "donation", "ignore", "is_initiator", "is_sender", "is_target",
-    "amount", "fees", "tez_to_euros", "tez_to_usd", "token_name", "token_id",
-    "token_editions", "token_address", "entrypoint", "hash", "comment", "teztok"]
+    "timestamp", "level", "tez_balance", "kind", "entrypoint", "initiator",
+    "sender", "target", "is_initiator", "is_sender", "is_target", "applied",
+    "internal", "ignore", "mint", "collect", "active_offer", "art_sale",
+    "collection_sale", "staking", "origination", "reveal", "delegation",
+    "prize", "donation", "amount", "fees", "received_amount", "art_sale_amount",
+    "collection_sale_amount", "staking_rewards_amount", "prize_amount",
+    "received_amount_others", "spent_amount", "collect_amount",
+    "active_offer_amount", "donation_amount", "spent_amount_others",
+    "spent_fees", "tez_to_euros", "tez_to_usd", "token_name", "token_id",
+    "token_editions", "token_address", "tzkt_link", "comment", "teztok"]
 format = [
-    "%s", "%i", "%s", "%s", "%s", "%s", "%r", "%r", "%r", "%r", "%r", "%r",
-    "%r", "%r", "%r", "%r", "%r", "%r", "%r", "%f", "%f", "%f", "%f", "%s",
-    "%s", "%s", "%s", "%s", "%s", "%s", "%r"]
+    "%s", "%i", "%f", "%s", "%s", "%s", "%s", "%s", "%r", "%r", "%r", "%r",
+    "%r", "%r", "%r", "%r", "%r", "%r", "%r", "%r", "%r", "%r", "%r", "%r",
+    "%r", "%f", "%f", "%f", "%f", "%f", "%f", "%f", "%f", "%f", "%f", "%f",
+    "%f", "%f", "%f", "%f", "%f", "%s", "%s", "%s", "%s", "%s", "%s", "%r"]
 
-with open(os.path.join(data_directory, file_name), "w", newline="\n") as output_file:
+with open(os.path.join(data_directory, "output", file_name), "w", newline="\n") as output_file:
     writer = csv.writer(output_file)
 
     # Write the header
     writer.writerow(columns)
 
     # Loop over the combined operations
+    tez_balance = 0
+
     for op in combined_operations:
+        # Check if the user is the initiator, the sender or the target
+        is_initiator = op["initiator"] in user_wallets
+        is_sender = op["sender"] in user_wallets
+        is_target = op["target"] in user_wallets
+
+        # Calculate the different received and spent tez amounts
+        applied = op["applied"]
+        ignore = op["ignore"]
+        amount = op["amount"]
+        fees = op["fees"]
+        received_amount = amount if (is_target and applied and (not ignore)) else 0
+        art_sale_amount = amount if (is_target and applied and (not ignore) and op["art_sale"]) else 0
+        collection_sale_amount = amount if (is_target and applied and (not ignore) and op["collection_sale"]) else 0
+        staking_rewards_amount = amount if (is_target and applied and (not ignore) and op["staking"]) else 0
+        prize_amount = amount if (is_target and applied and (not ignore) and op["prize"]) else 0
+        received_amount_others = amount if (is_target and applied and (not ignore) and (not (op["art_sale"] or op["collection_sale"] or op["staking"] or op["prize"]))) else 0
+        spent_amount = amount if (is_sender and applied and (not ignore) and (not op["active_offer"])) else 0
+        collect_amount = amount if (is_sender and applied and (not ignore) and op["collect"]) else 0
+        active_offer_amount = amount if (is_sender and applied and (not ignore) and op["active_offer"]) else 0
+        donation_amount = amount if (is_sender and applied and (not ignore) and op["donation"]) else 0
+        spent_amount_others = amount if (is_sender and applied and (not ignore) and (not (op["collect"] or op["active_offer"] or op["donation"]))) else 0
+        spent_fees = fees if (is_initiator or is_sender) else 0
+
+        # Calculate the tez balance
+        tez_balance += received_amount - spent_amount - active_offer_amount - spent_fees
+
         # Get the token alias
         token_address = op["token_address"]
         token_alias = ""
@@ -875,37 +998,68 @@ with open(os.path.join(data_directory, file_name), "w", newline="\n") as output_
         elif token_address in aliases:
             token_alias = aliases[token_address]
 
+        token_alias = token_alias.replace(",", " ")
+
         # Write the operation data in the output file
         data = [
             op["timestamp"],
             op["level"],
+            tez_balance,
+            op["kind"],
+            op["entrypoint"] if op["entrypoint"] is not None else "",
             aliases.get(op["initiator"], op["initiator"]).replace(",", " ") if op["initiator"] is not None else "",
             aliases.get(op["sender"], op["sender"]).replace(",", " "),
             aliases.get(op["target"], op["target"]).replace(",", " ") if op["target"] is not None else "",
-            op["kind"],
+            is_initiator,
+            is_sender,
+            is_target,
+            applied,
             op["internal"],
+            ignore,
             op["mint"],
             op["collect"],
+            op["active_offer"],
             op["art_sale"],
             op["collection_sale"],
             op["staking"],
             op["origination"],
+            op["reveal"],
+            op["delegation"],
             op["prize"],
             op["donation"],
-            op["ignore"],
-            op["initiator"] in user_wallets,
-            op["sender"] in user_wallets,
-            op["target"] in user_wallets,
-            op["amount"],
-            op["fees"],
+            amount,
+            fees,
+            received_amount,
+            art_sale_amount,
+            collection_sale_amount,
+            staking_rewards_amount,
+            prize_amount,
+            received_amount_others,
+            spent_amount,
+            collect_amount,
+            active_offer_amount,
+            donation_amount,
+            spent_amount_others,
+            spent_fees,
             op["tez_to_euros"],
             op["tez_to_usd"],
-            token_alias.replace(",", " "),
+            token_alias,
             op["token_id"] if op["token_id"] is not None else "",
             op["token_editions"] if op["token_editions"] is not None else "",
             token_address if token_address is not None else "",
-            op["entrypoint"] if op["entrypoint"] is not None else "",
-            op["hash"],
+            "https://tzkt.io/%s" % op["hash"],
             op["comment"],
             op["teztok"]]
         writer.writerow(data)
+
+# Save the unprocessed transactions in a json file
+unprocessed_file_name = "unprocessed_transactions_%s.json" % user_first_wallet
+save_json_file(os.path.join(data_directory, "output", unprocessed_file_name), unprocessed_transactions)
+
+# Print some details
+print("\n We discovered %i operations associated to the user wallets." % len(combined_operations))
+print(" You can find the processed information in %s\n" % os.path.join(data_directory, "output", file_name))
+
+if len(unprocessed_transactions) > 0:
+    print(" Of those, %i operations could not be processed completely." % len(unprocessed_transactions))
+    print(" See %s for more details.\n" % os.path.join(data_directory, "output", unprocessed_file_name))

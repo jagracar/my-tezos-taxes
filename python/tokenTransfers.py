@@ -6,7 +6,8 @@ from taxUtils import *
 data_directory = "../data"
 
 # Load the user wallets
-user_wallets = read_json_file(os.path.join(data_directory, "user_wallets.json"))
+user_wallets = read_json_file(os.path.join(data_directory, "input", "user_wallets.json"))
+user_first_wallet = list(user_wallets.keys())[0]
 
 # Get the raw token transfers associated with the user
 raw_token_transfers = get_user_token_transfers(user_wallets)
@@ -21,6 +22,9 @@ fa2_tokens = get_fa2_tokens()
 # Get the main tezos tokens and smart contract aliases
 token_aliases = {address: name for name, address in TOKENS.items()}
 smart_contract_aliases = {address: alias for alias, address in SMART_CONTRACTS.items()}
+
+# Define the burn addresses
+burn_addresses = ["tz1burnburnburnburnburnburnburjAYjjX"]
 
 # Process the raw token transfers
 token_transfers = []
@@ -39,7 +43,8 @@ for tt in raw_token_transfers:
         "burn": False,
         "token_id": tt["token"]["tokenId"],
         "token_editions": int(tt["amount"]),
-        "token_address": tt["token"]["contract"]["address"]}
+        "token_address": tt["token"]["contract"]["address"],
+        "token_standard": tt["token"]["standard"]}
 
     # Check if it's an internal transaction between the user wallets
     token_transfer["internal"] = (token_transfer["from"] in user_wallets) and (token_transfer["to"] in user_wallets)
@@ -50,7 +55,7 @@ for tt in raw_token_transfers:
     # Check if the token was sent, received or burned
     token_transfer["send"] = (not token_transfer["internal"]) and (token_transfer["from"] in user_wallets)
     token_transfer["receive"] = (not token_transfer["internal"]) and (token_transfer["to"] in user_wallets)
-    token_transfer["burn"] = token_transfer["to"] in [None, "tz1burnburnburnburnburnburnburjAYjjX"]
+    token_transfer["burn"] = (token_transfer["to"] is None) or (token_transfer["to"] in burn_addresses)
 
     # Add the processed token transfer
     token_transfers.append(token_transfer)
@@ -60,7 +65,7 @@ aliases = {}
 aliases.update(user_wallets)
 aliases.update(token_aliases)
 aliases.update(smart_contract_aliases)
-aliases.update({"tz1burnburnburnburnburnburnburjAYjjX": "Burn address"})
+aliases.update({address: "Burn address" for address in burn_addresses})
 
 for token_address, token_alias in fa12_tokens.items():
     if token_address not in aliases:
@@ -71,15 +76,16 @@ for token_address, token_alias in fa2_tokens.items():
         aliases[token_address] = token_alias
 
 # Save the processed data in a csv file
-file_name = "token_transfers_%s.csv" % list(user_wallets.keys())[0]
+file_name = "token_transfers_%s.csv" % user_first_wallet
 columns = [
     "timestamp", "level", "from", "to", "internal", "mint", "send", "receive",
-    "burn", "token_name", "token_id", "token_editions", "token_address"]
+    "burn", "token_name", "token_id", "token_editions", "token_address",
+    "token_standard", "token_link"]
 format = [
     "%s", "%i", "%s", "%s", "%r", "%r", "%r", "%r", "%r", "%s", "%s", "%s",
-    "%s"]
+    "%s", "%s", "%s"]
 
-with open(os.path.join(data_directory, file_name), "w", newline="\n") as output_file:
+with open(os.path.join(data_directory, "output", file_name), "w", newline="\n") as output_file:
     writer = csv.writer(output_file)
 
     # Write the header
@@ -88,15 +94,18 @@ with open(os.path.join(data_directory, file_name), "w", newline="\n") as output_
     # Loop over the token transfers
     for tt in token_transfers:
         # Get the token alias
+        token_id = tt["token_id"]
         token_address = tt["token_address"]
-        alias = ""
+        token_alias = ""
 
         if token_address in token_aliases:
-            alias = token_aliases[token_address]
+            token_alias = token_aliases[token_address]
         elif token_address in objktcom_collections:
-            alias = "objkt.com collection"
+            token_alias = "objkt.com collection"
         elif token_address in aliases:
-            alias = aliases[token_address]
+            token_alias = aliases[token_address]
+
+        token_alias = token_alias.replace(",", " ")
 
         # Write the token transfer data in the output file
         data = [
@@ -109,8 +118,14 @@ with open(os.path.join(data_directory, file_name), "w", newline="\n") as output_
             tt["send"],
             tt["receive"],
             tt["burn"],
-            alias.replace(",", " "),
-            tt["token_id"] if tt["token_id"] is not None else "",
+            token_alias,
+            token_id if token_id is not None else "",
             tt["token_editions"] if tt["token_editions"] is not None else "",
-            token_address if token_address is not None else ""]
+            token_address if token_address is not None else "",
+            tt["token_standard"],
+            get_token_link(token_alias, token_id, token_address)]
         writer.writerow(data)
+
+# Print some details
+print("\n We discovered %i token transfers associated to the user wallets." % len(token_transfers))
+print(" You can find the processed information in %s\n" % os.path.join(data_directory, "output", file_name))

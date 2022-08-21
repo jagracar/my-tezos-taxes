@@ -13,28 +13,24 @@ never use them (DeFi), but you are free to extend the scripts to your needs.
 
 ## How to run it
 
-Edit [user_wallets.json](data/user_wallets.json) and
-[baker_wallets.json](data/baker_wallets.json) with your personal information.
+Edit [user_wallets.json](data/input/user_wallets.json) and
+[baker_wallets.json](data/input/baker_wallets.json) with your personal information.
 
-Edit [tax_parameters.json](data/tax_parameters.json) with your country specific tax
+Edit [tax_parameters.json](data/input/tax_parameters.json) with your country specific tax
 parameters.
 
-Add any needed operation correction to [operation_corrections.json](data/operation_corrections.json).
+Add any needed operation correction to [operation_corrections.json](data/input/operation_corrections.json).
 
-Run the scripts using python3:
+Run the scripts using python3 (order is important):
 
 ```bash
 cd my-tezos-taxes/python
+python3 historicalTezBalance.py
 python3 walletOperations.py
 python3 tokenTransfers.py
-python3 historicalTezBalance.py
+python3 tokenDetails.py
 python3 calculateTaxes.py
 ```
 
-After few seconds you will have the tax report and some csv files will be saved in the [data directory](data).
-
-You can check to see what category of transactions are unexplained using:
-
-```bash
-python3 checkUnknown.py
-```
+After few seconds you will have the tax report and some csv files will be saved
+in the [output directory](data/output).

@@ -1,5 +1,6 @@
 import json
 import requests
+import numpy as np
 import pandas as pd
 
 # Trick to be able to print the complete transaction hashes on the console
@@ -148,7 +149,75 @@ def read_json_file(file_name):
         return json.load(json_file)
 
 
-def get_query_result(url, parameters=None, timeout=30):
+def save_json_file(file_name, data, compact=False):
+    """Saves some data as a json file.
+
+    Parameters
+    ----------
+    file_name: str
+        The complete path to the json file where the data will be saved.
+    data: object
+        The data to save.
+    compact: bool, optional
+        If True, the json file will be saved in a compact form. Default is
+        False.
+
+    """
+    with open(file_name, "w", encoding="utf-8") as json_file:
+        if compact:
+            json.dump(data, json_file, indent=None, separators=(",", ":"))
+        else:
+            json.dump(data, json_file, indent=4)
+
+
+def get_token_link(token_alias, token_id, token_address):
+    """Returns the web link to a given token.
+
+    Parameters
+    ----------
+    token_alias: str
+        The token alias.
+    token_id: str
+        The token id.
+    token_address: str
+        The token contract address.
+
+    Returns
+    -------
+    str
+        The token web link.
+
+    """
+    # Return if there is not enough information to build the link
+    if (token_id is None) or (token_address is None):
+        return ""
+
+    # Return the correct token link
+    tokens_to_exclude = [
+        "hDAO", "Materia", "MATH", "TezDAO", "tz1and Place", "tz1and Item",
+        "contter token"]
+
+    if token_alias == "OBJKT":
+        return "https://teia.art/objkt/%s" % token_id
+    elif token_alias == "objkt.com collection":
+        return "http://objkt.com/asset/%s/%s" % (token_address, token_id)
+    elif token_alias in ["GENTK v1", "GENTK v2"]:
+        return "https://www.fxhash.xyz/gentk/%s" % token_id
+    elif token_alias == "ITEM":
+        return "https://versum.xyz/token/versum/%s" % token_id
+    elif token_alias == "8bidou 8x8 token":
+        return "https://www.8bidou.com/item/?id=%s" % token_id
+    elif token_alias == "8bidou 24x24 token":
+        return "https://www.8bidou.com/g_item/?id=%s" % token_id
+    elif token_alias == "8scribo token":
+        return "https://8scribo.xyz/haikus/%s" % token_id
+    elif (token_alias in TOKENS) and (token_alias not in tokens_to_exclude):
+        return "http://objkt.com/asset/%s/%s" % (token_address, token_id)
+    else:
+        return ""
+
+
+def get_query_result(url, parameters=None, timeout=60):
     """Executes the given query and returns the result.
 
     Parameters
@@ -158,7 +227,7 @@ def get_query_result(url, parameters=None, timeout=30):
     parameters: dict, optional
         The query parameters. Default is None.
     timeout: float, optional
-        The query timeout in seconds. Default is 30 seconds.
+        The query timeout in seconds. Default is 60 seconds.
 
     Returns
     -------
@@ -174,7 +243,7 @@ def get_query_result(url, parameters=None, timeout=30):
     return None
 
 
-def get_graphql_query_result(url, query, timeout=30):
+def get_graphql_query_result(url, query, timeout=60):
     """Executes the given GraphQL query and returns the result.
 
     Parameters
@@ -184,7 +253,7 @@ def get_graphql_query_result(url, query, timeout=30):
     query: dict
         The GraphQL query.
     timeout: float, optional
-        The query timeout in seconds. Default is 30 seconds.
+        The query timeout in seconds. Default is 60 seconds.
 
     Returns
     -------
@@ -200,7 +269,7 @@ def get_graphql_query_result(url, query, timeout=30):
     return None
 
 
-def get_tzkt_query_result(url, parameters=None, timeout=30):
+def get_tzkt_query_result(url, parameters=None, timeout=60):
     """Executes the given tzkt query and returns the result.
 
     Parameters
@@ -210,7 +279,7 @@ def get_tzkt_query_result(url, parameters=None, timeout=30):
     parameters: dict, optional
         The query parameters. Default is None.
     timeout: float, optional
-        The query timeout in seconds. Default is 30 seconds.
+        The query timeout in seconds. Default is 60 seconds.
 
     Returns
     -------
@@ -235,7 +304,7 @@ def get_tzkt_query_result(url, parameters=None, timeout=30):
     return result
 
 
-def get_teztok_query_result(query, kind, timeout=30):
+def get_teztok_query_result(query, kind, timeout=60):
     """Executes the given teztok query and returns the result.
 
     Parameters
@@ -245,7 +314,7 @@ def get_teztok_query_result(query, kind, timeout=30):
     kind: str
         The kind of teztok query.
     timeout: float, optional
-        The query timeout in seconds. Default is 30 seconds.
+        The query timeout in seconds. Default is 60 seconds.
 
     Returns
     -------
@@ -344,7 +413,6 @@ def get_user_transactions(user_wallets):
     url = "https://api.tzkt.io/v1/operations/transactions"
     parameters = {
         "anyof.initiator.sender.target.in": ",".join(user_wallets),
-        "status": "applied",
         "quote": "eur,usd"}
 
     return get_tzkt_query_result(url, parameters)
@@ -367,10 +435,84 @@ def get_user_originations(user_wallets):
     url = "https://api.tzkt.io/v1/operations/originations"
     parameters = {
         "anyof.initiator.sender.in": ",".join(user_wallets),
-        "status": "applied",
         "quote": "eur,usd"}
 
     return get_tzkt_query_result(url, parameters)
+
+
+def get_user_reveals(user_wallets):
+    """Returns the complete list of user reveals.
+
+    Parameters
+    ----------
+    user_wallets: list
+        The user wallet addresses.
+
+    Returns
+    -------
+    list
+        A python list with the user reveals.
+
+    """
+    url = "https://api.tzkt.io/v1/operations/reveals"
+    parameters = {
+        "sender.in": ",".join(user_wallets),
+        "quote": "eur,usd"}
+
+    return get_tzkt_query_result(url, parameters)
+
+
+def get_user_delegations(user_wallets):
+    """Returns the complete list of user delegations.
+
+    Parameters
+    ----------
+    user_wallets: list
+        The user wallet addresses.
+
+    Returns
+    -------
+    list
+        A python list with the user delegations.
+
+    """
+    url = "https://api.tzkt.io/v1/operations/delegations"
+    parameters = {
+        "anyof.initiator.sender.in": ",".join(user_wallets),
+        "quote": "eur,usd"}
+
+    return get_tzkt_query_result(url, parameters)
+
+
+def combine_operations(operations_1, operations_2):
+    """Combines two lists of operations by increasing block level.
+
+    Parameters
+    ----------
+    operations_1: list
+        The first list of operations.
+    operations_2: list
+        The second list of operations.
+
+    Returns
+    -------
+    list
+        A python list with the combined operations.
+
+    """
+    combined_operations = []
+    counter = 0
+    o_2 = operations_2[counter] if counter < len(operations_2) else None
+
+    for o_1 in operations_1:
+        while o_2 is not None and o_2["level"] <= o_1["level"]:
+            combined_operations.append(o_2)
+            counter += 1
+            o_2 = operations_2[counter] if counter < len(operations_2) else None
+
+        combined_operations.append(o_1)
+
+    return combined_operations
 
 
 def get_user_token_transfers(user_wallets):
@@ -393,7 +535,7 @@ def get_user_token_transfers(user_wallets):
     return get_tzkt_query_result(url, parameters)
 
 
-def get_user_historical_balance(user_wallets):
+def get_user_tez_balance(user_wallets):
     """Returns the user historical tez balance.
 
     Parameters
@@ -407,8 +549,8 @@ def get_user_historical_balance(user_wallets):
         A python dictionary with the user historical tez balance.
 
     """
-    # Get the historical balance for each of the user wallets
-    historical_balances = []
+    # Get the historical tez balance for each of the user wallets
+    tez_balances = []
 
     for wallet in user_wallets:
         url = "https://api.tzkt.io/v1/accounts/%s/balance_history" % wallet
@@ -416,35 +558,35 @@ def get_user_historical_balance(user_wallets):
             "step": 1,
             "quote": "eur,usd"}
         query_result = get_tzkt_query_result(url, parameters)
-        historical_balances.append({item["level"]: item for item in query_result})
+        tez_balances.append({item["level"]: item for item in query_result})
 
     # Get all the block levels for which we have some balance information
     levels = []
 
-    for wallet_balances in historical_balances:
-        levels += list(wallet_balances.keys())
+    for tez_balance in tez_balances:
+        levels += list(tez_balance.keys())
 
     # Remove block level duplications and make sure they are sorted
     levels = list(set(levels))
     levels.sort()
 
-    # Calculate the combined historical wallet balances
-    combined_balances = [{"level": level, "timestamp": None, "balance": 0, "quote": None} for level in levels]
+    # Calculate the combined tez balance
+    combined_tez_balance = [{"level": level, "timestamp": None, "balance": 0, "quote": None} for level in levels]
 
-    for wallet_balances in historical_balances:
+    for tez_balance in tez_balances:
         previous_balance_amount = 0
 
-        for balance in combined_balances:
+        for balance in combined_tez_balance:
             level = balance["level"]
 
-            if level in wallet_balances:
-                balance["timestamp"] = wallet_balances[level]["timestamp"]
-                balance["quote"] = wallet_balances[level]["quote"]
-                previous_balance_amount = wallet_balances[level]["balance"] / 1e6
+            if level in tez_balance:
+                balance["timestamp"] = tez_balance[level]["timestamp"]
+                balance["quote"] = tez_balance[level]["quote"]
+                previous_balance_amount = tez_balance[level]["balance"] / 1e6
 
             balance["balance"] += previous_balance_amount
 
-    return combined_balances
+    return combined_tez_balance
 
 
 def get_user_mints(user_wallets):
@@ -561,6 +703,51 @@ def get_user_fulfilled_offers(user_wallets):
     return offers
 
 
+def get_user_active_offers(user_wallets):
+    """Returns the complete list of user active offers.
+
+    Parameters
+    ----------
+    user_wallets: list
+        The user wallet addresses.
+
+    Returns
+    -------
+    dict
+        A python dictionary with user active offers.
+
+    """
+    query = """
+        query UserActiveOffers {
+            offers(where: {buyer_address: {_in: ["%s"]}, status: {_eq: "active"}}, limit: **LIMIT**, offset: **OFFSET**) {
+                type
+                offer_id
+                bid_id
+                token_id
+                fa2_address
+            }
+        }
+    """ % ('","'.join(user_wallets))
+    active_offers = get_teztok_query_result({"query": query}, kind="offers")
+
+    offers = {}
+
+    for offer in active_offers:
+        token_id = offer["token_id"]
+        token_address = offer["fa2_address"]
+
+        if token_address not in offers:
+            offers[token_address] = {}
+
+        if token_id not in offers[token_address]:
+            offers[token_address][token_id] = []
+
+        offers[token_address][token_id].append(
+            offer["offer_id"] if offer["offer_id"] is not None else offer["bid_id"])
+
+    return offers
+
+
 def get_user_collects(user_wallets):
     """Returns the complete list of user collect operations.
 
@@ -595,20 +782,25 @@ def get_user_collects(user_wallets):
     """ % ('","'.join(user_wallets))
     collects = get_teztok_query_result({"query": query}, kind="events")
 
-    # Get the fulfilled offers
+    # Get the fulfilled and active offers
     fulfilled_offers = get_user_fulfilled_offers(user_wallets)
+    active_offers = get_user_active_offers(user_wallets)
 
-    # Indicate which offers were fulfilled
+    # Indicate which offers were fulfilled and which are still active
     for collect in collects:
         offer_id = collect["offer_id"] if collect["offer_id"] is not None else collect["bid_id"]
-        collect["offer_fulfilled"] = None
+        collect["fulfilled_offer"] = None
+        collect["active_offer"] = None
 
         if offer_id is not None:
             token_id = collect["token_id"]
             token_address = collect["fa2_address"]
 
             if token_address in fulfilled_offers and token_id in fulfilled_offers[token_address]:
-                 collect["offer_fulfilled"] = offer_id in fulfilled_offers[token_address][token_id]
+                 collect["fulfilled_offer"] = offer_id in fulfilled_offers[token_address][token_id]
+
+            if token_address in active_offers and token_id in active_offers[token_address]:
+                 collect["active_offer"] = offer_id in active_offers[token_address][token_id]
 
     return {collect["ophash"]: collect for collect in collects}
 
@@ -684,7 +876,7 @@ def get_user_auction_bids(user_wallets):
             }
         }
     """ % ('","'.join(user_wallets))
-    auction_bids = get_teztok_query_result({"query": query}, kind="events", timeout=60)
+    auction_bids = get_teztok_query_result({"query": query}, kind="events")
 
     # Get the won auctions
     won_auctions = get_user_won_auctions(user_wallets)
@@ -784,27 +976,373 @@ def get_user_collection_sales(user_wallets):
 
 
 def fix_missing_token_information(tokens, token_transfers, kind):
-    # Try to fix the missing information using the token transfers details
-    for index, token in tokens.iterrows():
-        if token["token_id"] == "":
-            token_address = token["token_address"]
-            timestamp = token["timestamp"]
+    """Tries to fix any missing token information using the user token
+    transfers.
+
+    Parameters
+    ----------
+    tokens: object
+        The pandas data frame with the token information.
+    token_transfers: object
+        The pandas data frame with the user token transfers.
+    kind: str
+        The kind of transfers to look at: mint, send, receive or burn.
+
+    Returns
+    -------
+    object
+        The pandas data frame with the fixed token information.
+
+    """
+    # Make a copy of the original data frame
+    tokens = tokens.copy()
+
+    # Add the missing token information
+    def get_token_information(token):
+        token_name = token["token_name"]
+        token_id = token["token_id"]
+        token_editions = token["token_editions"]
+        token_address = token["token_address"]
+
+        # Check if there is some missing information
+        if token_id == "":
+            # Get the associated token transfers at the same timestamp
+            cond = token_transfers[kind] & (
+                token_transfers["timestamp"] == token["timestamp"])
 
             if token_address != "":
-                cond = ((token_transfers["token_address"] == token_address) & 
-                        (token_transfers["timestamp"] == timestamp))
+                cond &= token_transfers["token_address"] == token_address
 
-                if cond.sum() == 0:
-                    cond = ((token_transfers["token_address"] == token_address) & 
-                            (token_transfers[kind]))
-            else:
-                cond = token_transfers["timestamp"] == timestamp
+            # Select operations at any time if necessary
+            if (cond.sum() == 0) and (token_address != ""):
+                cond = token_transfers[kind] & (
+                    token_transfers["token_address"] == token_address)
 
+            # Make sure we have only one match
             if cond.sum() == 1:
                 transfers = token_transfers[cond]
-                tokens.loc[index, "token_name"] = transfers["token_name"].values[0]
-                tokens.loc[index, "token_id"] = transfers["token_id"].values[0]
-                tokens.loc[index, "token_editions"] = str(transfers["token_editions"].values[0])
-                tokens.loc[index, "token_address"] = transfers["token_address"].values[0]
+                token_name = transfers["token_name"].iloc[0]
+                token_id = transfers["token_id"].iloc[0]
+                token_editions = str(transfers["token_editions"].iloc[0])
+                token_address = transfers["token_address"].iloc[0]
+
+        return token_name, token_id, token_editions, token_address
+
+    tokens[["token_name", "token_id", "token_editions", "token_address"]] = tokens.apply(
+        get_token_information, axis=1, result_type="expand")
 
     return tokens
+
+
+def get_minted_tokens(operations, token_transfers):
+    """Returns the list of tokens minted by the user.
+
+    Parameters
+    ----------
+    operations: object
+        The pandas data frame with the user operations.
+    token_transfers: object
+        The pandas data frame with the user token transfers.
+
+    Returns
+    -------
+    object
+        A pandas data frame with the tokens minted by the user.
+
+    """
+    # Get the user minted tokens from the mint operations
+    cond = operations["is_sender"] & operations["applied"] & ~operations["ignore"] & operations["mint"]
+    minted_tokens = operations[cond].copy()
+    minted_tokens = minted_tokens.reset_index(drop=True)
+
+    # Try to fix any missing token information using the user token transfers
+    minted_tokens = fix_missing_token_information(minted_tokens, token_transfers, kind="mint")
+
+    # Transform the token editions column data type from string to int
+    minted_tokens["token_editions"] = pd.to_numeric(minted_tokens["token_editions"])
+
+    # Add a column with the token links
+    minted_tokens["token_link"] = minted_tokens.apply(
+        lambda t: get_token_link(t["token_name"], t["token_id"], t["token_address"]), axis=1)
+
+    # Reorder the columns
+    columns = [
+        "timestamp", "kind", "token_name", "token_id", "token_editions",
+        "token_address", "token_link", "tzkt_link"]
+
+    return minted_tokens[columns].copy()
+
+
+def get_collected_tokens(operations, token_transfers):
+    """Returns the list of tokens collected by the user.
+
+    Parameters
+    ----------
+    operations: object
+        The pandas data frame with the user operations.
+    token_transfers: object
+        The pandas data frame with the user token transfers.
+
+    Returns
+    -------
+    object
+        A pandas data frame with the tokens collected by the user.
+
+    """
+    # Get the user collected tokens from the collect operations
+    cond = operations["is_sender"] & operations["applied"] & ~operations["ignore"] & operations["collect"]
+    collected_tokens = operations[cond].copy()
+    collected_tokens = collected_tokens.reset_index(drop=True)
+
+    # Use better column names
+    collected_tokens = collected_tokens.rename(columns={"collect_amount": "buy_price"})
+
+    # Calculate the buy price in the different fiat coins
+    collected_tokens["buy_price_euros"] = collected_tokens["buy_price"] * collected_tokens["tez_to_euros"]
+    collected_tokens["buy_price_usd"] = collected_tokens["buy_price"] * collected_tokens["tez_to_usd"]
+
+    # Try to fix any missing token information using the user token transfers
+    collected_tokens = fix_missing_token_information(collected_tokens, token_transfers, kind="mint")
+    collected_tokens = fix_missing_token_information(collected_tokens, token_transfers, kind="receive")
+
+    # Transform the token editions column data type from string to int
+    collected_tokens["token_editions"] = pd.to_numeric(collected_tokens["token_editions"])
+
+    # Add a column with the token links
+    collected_tokens["token_link"] = collected_tokens.apply(
+        lambda t: get_token_link(t["token_name"], t["token_id"], t["token_address"]), axis=1)
+
+    # Reorder the columns
+    columns = [
+        "timestamp", "kind", "token_name", "token_id", "token_editions",
+        "token_address", "token_link", "buy_price", "buy_price_euros",
+        "buy_price_usd", "tzkt_link"]
+
+    return collected_tokens[columns].copy()
+
+
+def get_sold_tokens(operations, token_transfers):
+    """Returns the list of tokens sold by the user.
+
+    Parameters
+    ----------
+    operations: object
+        The pandas data frame with the user operations.
+    token_transfers: object
+        The pandas data frame with the user token transfers.
+
+    Returns
+    -------
+    object
+        A pandas data frame with the tokens sold by the user.
+
+    """
+    # Get the user sold tokens from the collection_sale operations
+    cond = operations["is_target"] & operations["applied"] & ~operations["ignore"] & operations["collection_sale"]
+    sold_tokens = operations[cond].copy()
+    sold_tokens = sold_tokens.reset_index(drop=True)
+
+    # Use better column names
+    sold_tokens = sold_tokens.rename(columns={"collection_sale_amount": "sell_price"})
+
+    # Calculate the sell price in the different fiat coins
+    sold_tokens["sell_price_euros"] = sold_tokens["sell_price"] * sold_tokens["tez_to_euros"]
+    sold_tokens["sell_price_usd"] = sold_tokens["sell_price"] * sold_tokens["tez_to_usd"]
+
+    # Try to fix any missing token information using the user token transfers
+    sold_tokens = fix_missing_token_information(sold_tokens, token_transfers, kind="send")
+
+    # Transform the token editions column data type from string to int
+    sold_tokens["token_editions"] = pd.to_numeric(sold_tokens["token_editions"])
+
+    # Add a column with the token links
+    sold_tokens["token_link"] = sold_tokens.apply(
+        lambda t: get_token_link(t["token_name"], t["token_id"], t["token_address"]), axis=1)
+
+    # Reorder the columns
+    columns = [
+        "timestamp", "kind", "token_name", "token_id", "token_editions",
+        "token_address", "token_link", "sell_price", "sell_price_euros",
+        "sell_price_usd", "tzkt_link"]
+
+    return sold_tokens[columns].copy()
+
+
+def get_token_trades(sold_tokens, collected_tokens, token_transfers):
+    """Returns the list of tokens sold by the user.
+
+    Parameters
+    ----------
+    operations: object
+        The pandas data frame with the user operations.
+    token_transfers: object
+        The pandas data frame with the user token transfers.
+
+    Returns
+    -------
+    object
+        A pandas data frame with the tokens sold by the user.
+
+    """
+    # Select the trades information from the sold tokens data frame
+    token_trades = sold_tokens.copy()
+    token_trades = token_trades.rename(columns={"timestamp": "sell_timestamp"})
+
+    # Add the buy information
+    def calculate_buy_information(token):
+        token_id = token["token_id"]
+        token_address = token["token_address"]
+        buy_timestamp = token["sell_timestamp"]
+        buy_price = 0
+        buy_price_euros = 0
+        buy_price_usd = 0
+
+        # Check if the token was collected
+        cond = ((collected_tokens["token_id"] == token_id) & 
+                (collected_tokens["token_address"] == token_address))
+
+        if cond.sum() > 0:
+            selected_tokens = collected_tokens[cond]
+            buy_timestamp = selected_tokens["timestamp"].iloc[0]
+            buy_price = selected_tokens["buy_price"].iloc[0]
+            buy_price_euros = selected_tokens["buy_price_euros"].iloc[0]
+            buy_price_usd = selected_tokens["buy_price_usd"].iloc[0]
+        else:
+            # Check if the token was dropped for free
+            cond = ((token_transfers["token_id"] == token_id) & 
+                    (token_transfers["token_address"] == token_address) & 
+                    (token_transfers["receive"]))
+    
+            if cond.sum() > 0:
+                buy_timestamp = token_transfers[cond]["timestamp"].iloc[0]
+
+        return buy_timestamp, buy_price, buy_price_euros, buy_price_usd
+
+    token_trades[["buy_timestamp", "buy_price", "buy_price_euros", "buy_price_usd"]] = token_trades.apply(
+        calculate_buy_information, axis=1, result_type="expand")
+
+    # Calculate the sale gains and the hold time
+    token_trades["gain"] = token_trades["sell_price"] - token_trades["buy_price"]
+    token_trades["gain_euros"] = token_trades["sell_price_euros"] - token_trades["buy_price_euros"]
+    token_trades["gain_usd"] = token_trades["sell_price_usd"] - token_trades["buy_price_usd"]
+    token_trades["hold_time"] = (token_trades["sell_timestamp"] - token_trades["buy_timestamp"]).dt.days
+
+    # Reorder the columns
+    columns = [
+        "token_name", "token_id", "token_editions", "token_address",
+        "token_link", "buy_timestamp", "sell_timestamp", "hold_time",
+        "buy_price", "sell_price", "gain", "buy_price_euros",
+        "sell_price_euros", "gain_euros", "buy_price_usd", "sell_price_usd",
+        "gain_usd"]
+
+    return token_trades[columns].copy()
+
+
+def get_tez_exchange_gains(operations, hold_period):
+    """Returns the gains associated to the exchange of tez to fiat.
+    
+    This method uses a FIFO (first in, first out) approach.
+
+    Parameters
+    ----------
+    operations: object
+        The pandas data frame with the user operations.
+    hold_period: int
+        The minimum holding time in days for the gains to be tax free.
+
+    Returns
+    -------
+    object
+        A pandas data frame with the tez exchange gains.
+
+    """
+    # Get the necessary numpy arrays
+    timestamp = operations["timestamp"].to_numpy().copy()
+    received_amount = operations["received_amount"].to_numpy().copy()
+    spent_amount = operations["spent_amount"].to_numpy().copy()
+    offer_amount = operations["active_offer_amount"].to_numpy().copy()
+    fees_amount = operations["spent_fees"].to_numpy().copy()
+    tez_to_euros = operations["tez_to_euros"].to_numpy().copy()
+    tez_to_usd = operations["tez_to_usd"].to_numpy().copy()
+    is_collect = (operations["collect_amount"] > 0).to_numpy().copy()
+    gain_euros = np.full(len(spent_amount), 0.0)
+    gain_usd = np.full(len(spent_amount), 0.0)
+    taxed_gain_euros = np.full(len(spent_amount), 0.0)
+    taxed_gain_usd = np.full(len(spent_amount), 0.0)
+
+    # Calculate the tez exchange gains
+    counter = 0
+
+    for i in range(len(spent_amount)):
+        # Process the fees_amount as a normal expense with no gains
+        while fees_amount[i] > 0:
+            # Calculate the amount to subtract
+            subtract_amount = fees_amount[i]
+
+            if subtract_amount > received_amount[counter]:
+                subtract_amount = received_amount[counter]
+
+            # Subtract the amount
+            fees_amount[i] -= subtract_amount
+            received_amount[counter] -= subtract_amount
+
+            # Check if all the tez from the "first in" operation have been used
+            if received_amount[counter] == 0:
+                counter += 1
+
+        # Process the active offers as a normal expense with no gains
+        while offer_amount[i] > 0:
+            # Calculate the amount to subtract
+            subtract_amount = offer_amount[i]
+
+            if subtract_amount > received_amount[counter]:
+                subtract_amount = received_amount[counter]
+
+            # Subtract the amount
+            offer_amount[i] -= subtract_amount
+            received_amount[counter] -= subtract_amount
+
+            # Check if all the tez from the "first in" operation have been used
+            if received_amount[counter] == 0:
+                counter += 1
+
+        # Process the spent_amount tez amount
+        while spent_amount[i] > 0:
+            # Calculate the amount to subtract
+            subtract_amount = spent_amount[i]
+
+            if subtract_amount > received_amount[counter]:
+                subtract_amount = received_amount[counter]
+
+            # Subtract the amount
+            spent_amount[i] -= subtract_amount
+            received_amount[counter] -= subtract_amount
+
+            # Check if it is a collect operation
+            if is_collect[i]:
+                # Calculate the gains from the tez exchanges
+                new_gain_euros = subtract_amount * (tez_to_euros[i] - tez_to_euros[counter])
+                new_gain_usd = subtract_amount * (tez_to_usd[i] - tez_to_usd[counter])
+                gain_euros[i] += new_gain_euros
+                gain_usd[i] += new_gain_usd
+
+                # Check if the gains are taxable
+                if (timestamp[i] - timestamp[counter]).days <= hold_period:
+                    taxed_gain_euros[i] += new_gain_euros
+                    taxed_gain_usd[i] += new_gain_usd
+
+            # Check if all the tez from the "first in" operation have been used
+            if received_amount[counter] == 0:
+                counter += 1
+
+    # Build a data frame from the numpy arrays
+    tez_exchange_gains = pd.DataFrame({
+        "timestamp": timestamp,
+        "tez_to_euros": tez_to_euros,
+        "tez_to_usd": tez_to_usd,
+        "gain_euros": gain_euros,
+        "gain_usd": gain_usd,
+        "taxed_gain_euros": taxed_gain_euros,
+        "taxed_gain_usd": taxed_gain_usd})
+
+    return tez_exchange_gains
