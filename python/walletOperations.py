@@ -210,10 +210,12 @@ for t in raw_transactions:
             transaction["kind"] = "objkt.com collection mint"
         elif transaction["target"] == TOKENS["ITEM"]:
             transaction["kind"] = "versum mint"
+        elif transaction["target"] in [TOKENS["8bidou 8x8 token"], TOKENS["8bidou 24x24 token"]]:
+            transaction["kind"] = "8bidou mint"
         elif transaction["target"] == TOKENS["typed token"]:
             transaction["kind"] = "typed mint"
         elif transaction["target"] == TOKENS["Rarible token"]:
-            transaction["kind"] = "Rarible mint"
+            transaction["kind"] = "rarible mint"
             transaction["mint"] = True
             transaction["token_id"] = transaction["parameters"]["itokenid"]
             transaction["token_editions"] = int(transaction["parameters"]["iamount"])
@@ -279,6 +281,9 @@ for t in raw_transactions:
             transaction["token_id"] = transaction["parameters"]["token_id"]
             transaction["token_editions"] = int(transaction["parameters"]["amount"])
             transaction["token_address"] = TOKENS["VesselsGen0"]
+    elif transaction["entrypoint"] == "mint_issuer":
+        if transaction["target"] in [SMART_CONTRACTS["FXHASH minter v1"], SMART_CONTRACTS["FXHASH minter v2"], SMART_CONTRACTS["FXHASH minter v3"]]:
+            transaction["kind"] = "create FXHASH collection"
     elif transaction["entrypoint"] == "hDAO_batch":
         transaction["kind"] = "hDAO mint"
         transaction["collect"] = True
@@ -389,7 +394,7 @@ for t in raw_transactions:
             if transaction["parameters"]["from"] in user_wallets:
                 transaction["kind"] = "send " + fa12_tokens[transaction["target"]]
 
-                if transaction["to"] in burn_addresses:
+                if transaction["parameters"]["to"] in burn_addresses:
                     transaction["kind"] = "burn " + fa12_tokens[transaction["target"]]
             else:
                 transaction["kind"] = "receive " + fa12_tokens[transaction["target"]]
@@ -437,6 +442,9 @@ for t in raw_transactions:
             else:
                 transaction["kind"] = "remove %s operators" % fa2_tokens[transaction["target"]]
                 transaction["token_id"] = transaction["parameters"][0]["remove_operator"]["token_id"]
+    elif transaction["entrypoint"] == "update_operators_for_all":
+        if transaction["target"] in TOKENS["Rarible token"]:
+            transaction["kind"] = "update %s operators" % token_aliases[transaction["target"]]
     elif transaction["entrypoint"] == "add_adhoc_operators":
         if transaction["target"] in token_aliases:
             transaction["kind"] = "update %s adhoc operators" % token_aliases[transaction["target"]]
@@ -469,10 +477,22 @@ for t in raw_transactions:
             transaction["token_id"] = transaction["parameters"]["objkt_id"]
             transaction["token_editions"] = int(transaction["parameters"]["objkt_amount"])
             transaction["token_address"] = transaction["parameters"]["fa2"]
+        elif transaction["target"] in [SMART_CONTRACTS["8bidou marketplace I"], SMART_CONTRACTS["8bidou marketplace II"]]:
+            transaction["kind"] = "8bidou swap"
         elif transaction["target"] == SMART_CONTRACTS["typed marketplace"]:
             transaction["kind"] = "typed swap"
         elif transaction["target"] == SMART_CONTRACTS["8scribo marketplace"]:
             transaction["kind"] = "8scribo swap"
+        elif transaction["target"] == SMART_CONTRACTS["akaMetaverse marketplace v1"]:
+            transaction["kind"] = "akaSwap swap"
+            transaction["token_id"] = transaction["parameters"]["akaOBJ_id"]
+            transaction["token_editions"] = int(transaction["parameters"]["akaOBJ_amount"])
+            transaction["token_address"] = TOKENS["akaSwap token"]
+        elif transaction["target"] in [SMART_CONTRACTS["akaMetaverse marketplace v2"], SMART_CONTRACTS["akaMetaverse marketplace v2.1"]]:
+            transaction["kind"] = "akaSwap swap"
+            transaction["token_id"] = transaction["parameters"]["token_id"]
+            transaction["token_editions"] = int(transaction["parameters"]["token_amount"])
+            transaction["token_address"] = transaction["parameters"]["token_fa2"]
     elif transaction["entrypoint"] == "cancel_swap":
         if transaction["target"] in [SMART_CONTRACTS["h=n marketplace v1"], SMART_CONTRACTS["h=n marketplace v2"]]:
             transaction["kind"] = "h=n cancel swap"
@@ -486,6 +506,11 @@ for t in raw_transactions:
             transaction["kind"] = "typed cancel swap"
         elif transaction["target"] == SMART_CONTRACTS["8scribo marketplace"]:
             transaction["kind"] = "8scribo cancel swap"
+        elif transaction["target"] in [SMART_CONTRACTS["akaMetaverse marketplace v1"], SMART_CONTRACTS["akaMetaverse marketplace v2"], SMART_CONTRACTS["akaMetaverse marketplace v2.1"]]:
+            transaction["kind"] = "akaSwap cancel swap"
+    elif transaction["entrypoint"] == "cancelswap":
+        if transaction["target"] in [SMART_CONTRACTS["8bidou marketplace I"], SMART_CONTRACTS["8bidou marketplace II"]]:
+            transaction["kind"] = "8bidou cancel swap"
     elif transaction["entrypoint"] == "ask":
         if transaction["target"] in [SMART_CONTRACTS["objkt.com marketplace v1"], SMART_CONTRACTS["objkt.com marketplace v2"]]:
             transaction["kind"] = "objkt.com swap"
@@ -562,7 +587,7 @@ for t in raw_transactions:
             transaction["token_id"] = transaction["parameters"]["token"]["token_id"]
             transaction["token_editions"] = 1
             transaction["token_address"] = transaction["parameters"]["token"]["address"]
-        elif transaction["target"] == SMART_CONTRACTS["objkt.com Dutch Auctions v1"]:
+        elif transaction["target"] in [SMART_CONTRACTS["objkt.com Dutch Auctions Old"], SMART_CONTRACTS["objkt.com Dutch Auctions v1"]]:
             transaction["kind"] = "objkt.com create Dutch auction"
             transaction["token_id"] = transaction["parameters"]["objkt_id"]
             transaction["token_editions"] = 1
@@ -580,8 +605,14 @@ for t in raw_transactions:
     elif transaction["entrypoint"] == "cancel_auction":
         if transaction["target"] in [SMART_CONTRACTS["objkt.com English Auctions Old"], SMART_CONTRACTS["objkt.com English Auctions v1"], SMART_CONTRACTS["objkt.com English Auctions v2"]]:
             transaction["kind"] = "objkt.com cancel English auction"
-        elif transaction["target"]in [SMART_CONTRACTS["objkt.com Dutch Auctions v1"], SMART_CONTRACTS["objkt.com Dutch Auctions v2"]]:
+        elif transaction["target"] in [SMART_CONTRACTS["objkt.com Dutch Auctions Old"], SMART_CONTRACTS["objkt.com Dutch Auctions v1"], SMART_CONTRACTS["objkt.com Dutch Auctions v2"]]:
             transaction["kind"] = "objkt.com cancel Dutch auction"
+    elif transaction["entrypoint"] == "conclude_auction":
+        if transaction["target"] in [SMART_CONTRACTS["objkt.com English Auctions Old"], SMART_CONTRACTS["objkt.com English Auctions v1"]]:
+            transaction["kind"] = "objkt.com settle English auction"            
+    elif transaction["entrypoint"] == "settle_auction":
+        if transaction["target"] == SMART_CONTRACTS["objkt.com English Auctions v2"]:
+            transaction["kind"] = "objkt.com settle English auction"            
     elif transaction["entrypoint"] == "withdraw":
         if transaction["target"] == SMART_CONTRACTS["versum marketplace"]:
             transaction["kind"] = "versum accept offer"
@@ -600,6 +631,15 @@ for t in raw_transactions:
             transaction["kind"] = "typed collect"
         elif transaction["target"] == SMART_CONTRACTS["8scribo marketplace"]:
             transaction["kind"] = "8scribo collect"
+        elif transaction["target"] == SMART_CONTRACTS["akaMetaverse marketplace v1"]:
+            transaction["kind"] = "akaSwap collect"
+            transaction["collect"] = True
+            transaction["token_editions"] = int(transaction["parameters"]["akaOBJ_amount"])
+            transaction["token_address"] = TOKENS["akaSwap token"]
+        elif transaction["target"] in [SMART_CONTRACTS["akaMetaverse marketplace v2"], SMART_CONTRACTS["akaMetaverse marketplace v2.1"]]:
+            transaction["kind"] = "akaSwap collect"
+            transaction["collect"] = True
+            transaction["token_editions"] = int(transaction["parameters"]["token_amount"])
         elif transaction["target"] == SMART_CONTRACTS["contter marketplace I"]:
             transaction["kind"] = "contter collect"
             transaction["collect"] = True
@@ -619,6 +659,10 @@ for t in raw_transactions:
     elif transaction["entrypoint"] == "collect_swap":
         if transaction["target"] == SMART_CONTRACTS["versum marketplace"]:
             transaction["kind"] = "versum collect"
+    elif transaction["entrypoint"] == "match_orders":
+        if transaction["target"] == SMART_CONTRACTS["rarible marketplace v2"]:
+            transaction["kind"] = "rarible collect"
+            transaction["collect"] = True
     elif transaction["entrypoint"] == "get_item":
         if transaction["target"] == SMART_CONTRACTS["tz1and world"]:
             transaction["kind"] = "tz1and collect"
@@ -630,7 +674,9 @@ for t in raw_transactions:
             transaction["collect"] = True
             transaction["token_address"] = TOKENS["tz1and Place"]
     elif transaction["entrypoint"] == "buy":
-        if transaction["target"] in [SMART_CONTRACTS["8bidou marketplace I"], SMART_CONTRACTS["8bidou marketplace II"]]:
+        if transaction["target"] in [SMART_CONTRACTS["objkt.com Dutch Auctions Old"], SMART_CONTRACTS["objkt.com Dutch Auctions v1"], SMART_CONTRACTS["objkt.com Dutch Auctions v2"]]:
+            transaction["kind"] = "objkt.com collect in Dutch auction"
+        elif transaction["target"] in [SMART_CONTRACTS["8bidou marketplace I"], SMART_CONTRACTS["8bidou marketplace II"]]:
             transaction["kind"] = "8bidou collect"
 
     # Check if the transaction is connected with sells
@@ -671,6 +717,9 @@ for t in raw_transactions:
     elif transaction["entrypoint"] == "update":
         if transaction["target"] == SMART_CONTRACTS["contter registry"]:
             transaction["kind"] = "update contter registry"
+    elif transaction["entrypoint"] == "register":
+        if transaction["target"] == SMART_CONTRACTS["typed registry"]:
+            transaction["kind"] = "update typed registry"
 
     # Other kind of calls
     if transaction["entrypoint"] == "_charge_materia":
@@ -730,11 +779,29 @@ for t in raw_transactions:
     if transaction["target"] == SMART_CONTRACTS["teia vote"]:
         transaction["kind"] = "teia vote"
 
+    if transaction["target"] == SMART_CONTRACTS["h=n DAO"]:
+        transaction["kind"] = "h=n DAO operation"
+
+    if transaction["entrypoint"] == "vote":
+        if transaction["target"] == SMART_CONTRACTS["h=n DAO II"]:
+            transaction["kind"] = "h=n vote"
+
     if transaction["target"] == SMART_CONTRACTS["tz1and world"]:
         if transaction["entrypoint"] != "get_item":
             transaction["kind"] = "tz1and operation"
 
-    if transaction["entrypoint"] == "pay_royalties_xtz":
+    if transaction["entrypoint"] in ["update_issuer", "update_price", "update_reserve"]:
+        if transaction["target"] in [SMART_CONTRACTS["FXHASH minter v1"], SMART_CONTRACTS["FXHASH minter v2"], SMART_CONTRACTS["FXHASH minter v3"]]:
+            transaction["kind"] = "FXHASH operation"
+    elif transaction["entrypoint"] in ["add", "update"]:
+        if transaction["sender"] in [SMART_CONTRACTS["FXHASH minter v2"], SMART_CONTRACTS["FXHASH minter v3"]]:
+            transaction["kind"] = "FXHASH operation"
+
+    if transaction["entrypoint"] == "burn_supply":
+        if transaction["target"] in [SMART_CONTRACTS["FXHASH minter v2"], SMART_CONTRACTS["FXHASH minter v3"]]:
+            transaction["kind"] = "FXHASH operation"
+
+    if transaction["entrypoint"] in ["pay_royalties_xtz", "sign_cocreator"]:
         if transaction["target"] == TOKENS["ITEM"]:
             transaction["kind"] = "versum operation"
 
@@ -745,6 +812,21 @@ for t in raw_transactions:
     if transaction["entrypoint"] == "check":
         if transaction["sender"] == TOKENS["contter token"]:
             transaction["kind"] = "contter operation"
+
+    if transaction["entrypoint"] == "acquire_royalties":
+        if transaction["target"] == SMART_CONTRACTS["akaMetaverse marketplace v1"]:
+            transaction["kind"] = "akaSwap operation"
+
+    if transaction["entrypoint"] == "assign_akaDAO":
+        if transaction["sender"] == SMART_CONTRACTS["akaMetaverse marketplace v1"]:
+            transaction["kind"] = "akaSwap operation"
+
+    if transaction["entrypoint"] == "match_and_transfer":
+        if transaction["target"] == SMART_CONTRACTS["rarible marketplace v2"]:
+            transaction["kind"] = "rarible operation"
+    elif transaction["entrypoint"] in ["do_transfers", "put", "remove"]:
+        if transaction["sender"] in [SMART_CONTRACTS["rarible marketplace v2"], SMART_CONTRACTS["rarible Transfer Manager"]]:
+            transaction["kind"] = "rarible operation"
 
     if transaction["entrypoint"] == "default":
         if transaction["target"] in [SMART_CONTRACTS["my tzprofile contract 1"], SMART_CONTRACTS["my tzprofile contract 2"]]:
