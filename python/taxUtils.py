@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 
 # Trick to be able to print the complete transaction hashes on the console
-pd.options.display.max_colwidth = 60
+pd.options.display.max_colwidth = 80
 
 # The main tezos FA2 tokens
 TOKENS = {
@@ -43,7 +43,8 @@ TOKENS = {
     "Ziggurats": "KT1PNcZQkJXMQ2Mg92HG1kyrcu3auFX5pfd8",
     "Rarible token": "KT18pVpRXKPY2c4U2yFEGSH3ZnhB2kL8kwXS",
     "Les Elefants Terribles token": "KT19BLv8px4VMLduVnYgahqFbsJ19FJXamUG",
-    "The Moments token": "KT1CNHwTyjFrKnCstRoMftyFVwoNzF6Xxhpy"
+    "The Moments token": "KT1CNHwTyjFrKnCstRoMftyFVwoNzF6Xxhpy",
+    "wUSDC": "KT18fp5rcTW7mbWDmzFwjLDUhs5MeJmagDSZ"
 }
 
 # The main tezos tokens mint prices in tez
@@ -140,7 +141,8 @@ SMART_CONTRACTS = {
     "TezID Controller": "KT1KbV8dBrkFopgjcCc4qb2336fcGgTvRGRC",
     "Ukraine war donations contract": "KT1DWnLiUkNtAQDErXxudFEH63JC6mqg3HEx",
     "QuipuSwap hDAO old": "KT1Qm3urGqkRsWsovGzNb2R81c3dSfxpteHG",
-    "QuipuSwap hDAO": "KT1QxLqukyfohPV5kPkw97Rs6cw1DDDvYgbB"
+    "QuipuSwap hDAO": "KT1QxLqukyfohPV5kPkw97Rs6cw1DDDvYgbB",
+    "QuipuSwap wUSDC": "KT1U2hs5eNdeCpHouAvQXGMzGFGJowbhjqmo"
 }
 
 
@@ -207,8 +209,8 @@ def get_token_link(token_alias, token_id, token_address):
 
     # Return the correct token link
     tokens_to_exclude = [
-        "hDAO", "Materia", "MATH", "TezDAO", "tz1and Place", "tz1and Item",
-        "contter token"]
+        "hDAO", "Materia", "wUSDC", "MATH", "TezDAO", "tz1and Place",
+        "tz1and Item", "contter token"]
 
     if token_alias == "OBJKT":
         return "https://teia.art/objkt/%s" % token_id
@@ -1018,29 +1020,47 @@ def fix_missing_token_information(tokens, token_transfers, kind):
         token_address = token["token_address"]
 
         # Check if there is some missing information
-        if token_id == "":
-            # Get the associated token transfers at the same timestamp
-            cond = token_transfers[kind] & (
+        if (token_id == "") or (token_editions == "") or (token_address == ""):
+            # Get the associated unused token token_transfer at the same timestamp
+            cond = ~token_transfers["used"] & token_transfers[kind] & (
                 token_transfers["timestamp"] == token["timestamp"])
+
+            if token_id != "":
+                cond &= token_transfers["token_id"] == token_id
+
+            if token_editions != "":
+                cond &= token_transfers["token_editions"] == token_editions
 
             if token_address != "":
                 cond &= token_transfers["token_address"] == token_address
 
-            # Select operations at any time if necessary
+            # Select operations at any later time if necessary
             if (cond.sum() == 0) and (token_address != ""):
-                cond = token_transfers[kind] & (
+                cond = ~token_transfers["used"] & token_transfers[kind] & (
+                    token_transfers["timestamp"] > token["timestamp"]) & (
                     token_transfers["token_address"] == token_address)
 
-            # Make sure we have only one match
+                if token_id != "":
+                    cond &= token_transfers["token_id"] == token_id
+
+                if token_editions != "":
+                    cond &= token_transfers["token_editions"] == int(token_editions)
+
+            # Make sure there is only one match
             if cond.sum() == 1:
-                transfers = token_transfers[cond]
-                token_name = transfers["token_name"].iloc[0]
-                token_id = transfers["token_id"].iloc[0]
-                token_editions = str(transfers["token_editions"].iloc[0])
-                token_address = transfers["token_address"].iloc[0]
+                # Get the token information from the token transfer
+                token_transfer = token_transfers[cond].iloc[0]
+                token_name = token_transfer["token_name"]
+                token_id = token_transfer["token_id"]
+                token_editions = token_transfer["token_editions"]
+                token_address = token_transfer["token_address"]
+
+                # Set the token transfer as used
+                token_transfers.loc[cond, "used"] = True
 
         return token_name, token_id, token_editions, token_address
 
+    # Obtain any missing token information
     tokens[["token_name", "token_id", "token_editions", "token_address"]] = tokens.apply(
         get_token_information, axis=1, result_type="expand")
 
@@ -1068,11 +1088,19 @@ def get_minted_tokens(operations, token_transfers):
     minted_tokens = operations[cond].copy()
     minted_tokens = minted_tokens.reset_index(drop=True)
 
+    # Set the associated token transfers as used
+    for _, token in minted_tokens.iterrows():
+        cond = token_transfers["mint"] & token_transfers["receive"] & (
+            token_transfers["timestamp"] == token["timestamp"]) & (
+            token_transfers["token_id"] == token["token_id"]) & (
+            token_transfers["token_editions"] == token["token_editions"]) & (
+            token_transfers["token_address"] == token["token_address"])
+
+        if cond.sum() == 1:
+            token_transfers.loc[cond, "used"] = True
+
     # Try to fix any missing token information using the user token transfers
     minted_tokens = fix_missing_token_information(minted_tokens, token_transfers, kind="mint")
-
-    # Transform the token editions column data type from string to int
-    minted_tokens["token_editions"] = pd.to_numeric(minted_tokens["token_editions"])
 
     # Add a column with the token links
     minted_tokens["token_link"] = minted_tokens.apply(
@@ -1084,6 +1112,93 @@ def get_minted_tokens(operations, token_transfers):
         "token_address", "token_link", "tzkt_link"]
 
     return minted_tokens[columns].copy()
+
+
+def split_multiple_collects(collected_tokens):
+    """Splits multiple collect operations in several single collect operations.
+
+    Parameters
+    ----------
+    collected_tokens: object
+        The pandas data frame with the user collected tokens.
+
+    Returns
+    -------
+    object
+        A pandas data frame with the splitted multiple collect operations.
+
+    """
+    # Get the multiple edition collects
+    cond = ~collected_tokens["token_editions"].isin(["", "1"]) & (
+        ~collected_tokens["token_name"].isin(["hDAO", "MATH", "Materia", "TezDAO", "akaDAO", "wUSDC"]))
+    multiple_edition_collects = collected_tokens[cond]
+
+    # Split the multiple edition collects and add them to the single edition collects
+    combined_collects = collected_tokens[~cond].copy()
+
+    for i in range(len(multiple_edition_collects)):
+        # Get the multiple edition collect
+        multiple_edition_collect = multiple_edition_collects.iloc[[i]]
+        token_editions = int(multiple_edition_collect["token_editions"].iloc[0])
+
+        # Create a single edition collect
+        single_edition_collect = multiple_edition_collect.copy()
+        single_edition_collect["token_editions"] = "1"
+        single_edition_collect["collect_amount"] /= token_editions
+
+        # Add one single edition collect for each collected edition
+        while token_editions > 0:
+            combined_collects = pd.concat([combined_collects, single_edition_collect.copy()])
+            token_editions -= 1
+
+    # Sort the data frame by the time stamp
+    combined_collects = combined_collects.sort_values(by="timestamp")
+    combined_collects = combined_collects.reset_index(drop=True)
+
+    return combined_collects
+
+
+def fix_token_ids_from_mints(collected_tokens, token_transfers):
+    """Tries to fix any missing token id from a list of collected minted tokens.
+
+    Parameters
+    ----------
+    collected_tokens: object
+        The pandas data frame with the user collected tokens.
+    token_transfers: object
+        The pandas data frame with the user token transfers.
+
+    Returns
+    -------
+    object
+        A pandas data frame with the fixed user collected tokens.
+
+    """
+    # Get the row indices of the tokens that are only missing the token id
+    cond = (collected_tokens["token_id"] == "") & (
+        collected_tokens["token_editions"] == "1") & (
+        collected_tokens["token_address"] != "")
+    indices = collected_tokens.index[cond].to_numpy()
+
+    # Loop over the indices and try to get the token id from the token transfers
+    for index in indices:
+        # Select only recent unused mints
+        timestamp = collected_tokens.loc[index, "timestamp"]
+        token_address = collected_tokens.loc[index, "token_address"]
+        cond = ~token_transfers["used"] & token_transfers["mint"] & (
+            token_transfers["token_address"] == token_address) & (
+            token_transfers["timestamp"] >= timestamp) & (
+            (token_transfers["timestamp"] - timestamp).dt.days < 2)
+
+        if cond.sum() > 0:
+            # Use the token id from the first matching token transfer
+            first_matched_index = token_transfers.index[cond][0]
+            collected_tokens.loc[index, "token_id"] = token_transfers.loc[first_matched_index, "token_id"]
+
+            # Set the token transfer as used
+            token_transfers.loc[first_matched_index, "used"] = True
+
+    return collected_tokens
 
 
 def get_collected_tokens(operations, token_transfers):
@@ -1107,19 +1222,33 @@ def get_collected_tokens(operations, token_transfers):
     collected_tokens = operations[cond].copy()
     collected_tokens = collected_tokens.reset_index(drop=True)
 
+    # Set the associated token transfers as used
+    for i, token in collected_tokens.iterrows():
+        cond = token_transfers["receive"] & (
+            token_transfers["timestamp"] == token["timestamp"]) & (
+            token_transfers["token_id"] == token["token_id"]) & (
+            token_transfers["token_editions"] == token["token_editions"]) & (
+            token_transfers["token_address"] == token["token_address"])
+
+        if cond.sum() == 1:
+            token_transfers.loc[cond, "used"] = True
+
+    # Try to fix any missing token information using the user token transfers
+    collected_tokens = fix_missing_token_information(collected_tokens, token_transfers, kind="mint")
+    collected_tokens = fix_missing_token_information(collected_tokens, token_transfers, kind="receive")
+
+    # Split multiple collects into single collects
+    collected_tokens = split_multiple_collects(collected_tokens)
+
+    # Try to fix the missing token ids from some of the minted tokens
+    collected_tokens = fix_token_ids_from_mints(collected_tokens, token_transfers)
+
     # Use better column names
     collected_tokens = collected_tokens.rename(columns={"collect_amount": "buy_price"})
 
     # Calculate the buy price in the different fiat coins
     collected_tokens["buy_price_euros"] = collected_tokens["buy_price"] * collected_tokens["tez_to_euros"]
     collected_tokens["buy_price_usd"] = collected_tokens["buy_price"] * collected_tokens["tez_to_usd"]
-
-    # Try to fix any missing token information using the user token transfers
-    collected_tokens = fix_missing_token_information(collected_tokens, token_transfers, kind="mint")
-    collected_tokens = fix_missing_token_information(collected_tokens, token_transfers, kind="receive")
-
-    # Transform the token editions column data type from string to int
-    collected_tokens["token_editions"] = pd.to_numeric(collected_tokens["token_editions"])
 
     # Add a column with the token links
     collected_tokens["token_link"] = collected_tokens.apply(
@@ -1132,6 +1261,76 @@ def get_collected_tokens(operations, token_transfers):
         "buy_price_usd", "tzkt_link"]
 
     return collected_tokens[columns].copy()
+
+
+def get_dropped_tokens(operations, token_transfers, collected_tokens):
+    """Returns the list of tokens dropped to the user.
+
+    Parameters
+    ----------
+    operations: object
+        The pandas data frame with the user operations.
+    token_transfers: object
+        The pandas data frame with the user token transfers.
+    collected_tokens: object
+        The pandas data frame with the user collected tokens.
+
+    Returns
+    -------
+    object
+        A pandas data frame with the tokens collected by the user.
+
+    """
+
+    # Check if a token transfer is associated with a drop
+    def check_is_drop(token_transfer):
+        # Make sure that the token transfer has not been used already
+        if token_transfer["used"]:
+            return False
+
+        # Drops can only be receive transfers
+        if not token_transfer["receive"]:
+            return False
+
+        # Check if there is an operation triggered by the user for this token
+        # with the same time stamp
+        token_id = token_transfer["token_id"]
+        token_editions = str(token_transfer["token_editions"])
+        token_address = token_transfer["token_address"]
+        cond = operations["is_sender"] & (
+            operations["timestamp"] == token_transfer["timestamp"]) & (
+            operations["token_id"] == token_id) & (
+            operations["token_editions"] == token_editions) & (
+            operations["token_address"] == token_address)
+
+        if cond.sum() > 0:
+            return False
+
+        # Check if the token is in the list of collected tokens
+        cond = (
+            collected_tokens["token_id"] == token_id) & (
+            collected_tokens["token_editions"] == token_editions) & (
+            collected_tokens["token_address"] == token_address)
+
+        if cond.sum() > 0:
+            return False
+        else:
+            return True
+
+    # Get the transfers associated to a token drop
+    is_drop = token_transfers.apply(check_is_drop, axis=1)
+    dropped_token_transfers = token_transfers[is_drop].copy()
+    dropped_token_transfers = dropped_token_transfers.reset_index(drop=True)
+
+    # Update the token transfers used column
+    token_transfers.loc[is_drop, "used"] = True
+
+    # Reorder the columns
+    columns = [
+        "timestamp", "from", "to", "token_name", "token_id", "token_editions",
+        "token_address", "token_link"]
+
+    return dropped_token_transfers[columns].copy()
 
 
 def get_sold_tokens(operations, token_transfers):
@@ -1155,18 +1354,26 @@ def get_sold_tokens(operations, token_transfers):
     sold_tokens = operations[cond].copy()
     sold_tokens = sold_tokens.reset_index(drop=True)
 
+    # Set the associated token transfers as used
+    for i, token in sold_tokens.iterrows():
+        cond = token_transfers["send"] & (
+            token_transfers["timestamp"] == token["timestamp"]) & (
+            token_transfers["token_id"] == token["token_id"]) & (
+            token_transfers["token_editions"] == token["token_editions"]) & (
+            token_transfers["token_address"] == token["token_address"])
+
+        if cond.sum() == 1:
+            token_transfers.loc[cond, "used"] = True
+
+    # Try to fix any missing token information using the user token transfers
+    sold_tokens = fix_missing_token_information(sold_tokens, token_transfers, kind="send")
+
     # Use better column names
     sold_tokens = sold_tokens.rename(columns={"collection_sale_amount": "sell_price"})
 
     # Calculate the sell price in the different fiat coins
     sold_tokens["sell_price_euros"] = sold_tokens["sell_price"] * sold_tokens["tez_to_euros"]
     sold_tokens["sell_price_usd"] = sold_tokens["sell_price"] * sold_tokens["tez_to_usd"]
-
-    # Try to fix any missing token information using the user token transfers
-    sold_tokens = fix_missing_token_information(sold_tokens, token_transfers, kind="send")
-
-    # Transform the token editions column data type from string to int
-    sold_tokens["token_editions"] = pd.to_numeric(sold_tokens["token_editions"])
 
     # Add a column with the token links
     sold_tokens["token_link"] = sold_tokens.apply(
@@ -1181,8 +1388,8 @@ def get_sold_tokens(operations, token_transfers):
     return sold_tokens[columns].copy()
 
 
-def get_token_trades(sold_tokens, collected_tokens, token_transfers):
-    """Returns the list of tokens sold by the user.
+def get_transferred_tokens(operations, token_transfers, minted_tokens):
+    """Returns the list of tokens transferred by the user to other users.
 
     Parameters
     ----------
@@ -1190,63 +1397,295 @@ def get_token_trades(sold_tokens, collected_tokens, token_transfers):
         The pandas data frame with the user operations.
     token_transfers: object
         The pandas data frame with the user token transfers.
+    minted_tokens: object
+        The pandas data frame with the user minted tokens.
 
     Returns
     -------
     object
-        A pandas data frame with the tokens sold by the user.
+        A pandas data frame with the tokens transferred by the user.
 
     """
-    # Select the trades information from the sold tokens data frame
-    token_trades = sold_tokens.copy()
-    token_trades = token_trades.rename(columns={"timestamp": "sell_timestamp"})
 
-    # Add the buy information
-    def calculate_buy_information(token):
-        token_id = token["token_id"]
-        token_address = token["token_address"]
-        buy_timestamp = token["sell_timestamp"]
-        buy_price = 0
-        buy_price_euros = 0
-        buy_price_usd = 0
+    # Check if a token transfer is associated with a user initiated transfer
+    def check_is_user_transfer(token_transfer):
+        # Make sure that the token transfer has not been used already
+        if token_transfer["used"]:
+            return False
 
-        # Check if the token was collected
-        cond = ((collected_tokens["token_id"] == token_id) & 
-                (collected_tokens["token_address"] == token_address))
+        # User transfers can only be send transfers
+        if not token_transfer["send"]:
+            return False
+
+        # Check if the token is in the list of minted tokens
+        cond = (
+            minted_tokens["token_id"] == token_transfer["token_id"]) & (
+            minted_tokens["token_address"] == token_transfer["token_address"])
 
         if cond.sum() > 0:
-            selected_tokens = collected_tokens[cond]
-            buy_timestamp = selected_tokens["timestamp"].iloc[0]
-            buy_price = selected_tokens["buy_price"].iloc[0]
-            buy_price_euros = selected_tokens["buy_price_euros"].iloc[0]
-            buy_price_usd = selected_tokens["buy_price_usd"].iloc[0]
+            return False
+
+        # Check if there is a transfer operation sent by the user with the same
+        # time stamp
+        cond = operations["is_sender"] & ~operations["ignore"] & (
+            operations["entrypoint"] == "transfer") & (
+            operations["timestamp"] == token_transfer["timestamp"])
+
+        if cond.sum() == 1:
+            return True
         else:
-            # Check if the token was dropped for free
-            cond = ((token_transfers["token_id"] == token_id) & 
-                    (token_transfers["token_address"] == token_address) & 
-                    (token_transfers["receive"]))
-    
-            if cond.sum() > 0:
-                buy_timestamp = token_transfers[cond]["timestamp"].iloc[0]
+            return False
 
-        return buy_timestamp, buy_price, buy_price_euros, buy_price_usd
+    # Get the transfers associated to a user token transfer
+    is_user_transfer = token_transfers.apply(check_is_user_transfer, axis=1)
+    transferred_tokens = token_transfers[is_user_transfer].copy()
+    transferred_tokens = transferred_tokens.reset_index(drop=True)
 
-    token_trades[["buy_timestamp", "buy_price", "buy_price_euros", "buy_price_usd"]] = token_trades.apply(
-        calculate_buy_information, axis=1, result_type="expand")
+    # Update the token transfers used column
+    token_transfers.loc[is_user_transfer, "used"] = True
 
-    # Calculate the sale gains and the hold time
-    token_trades["gain"] = token_trades["sell_price"] - token_trades["buy_price"]
-    token_trades["gain_euros"] = token_trades["sell_price_euros"] - token_trades["buy_price_euros"]
-    token_trades["gain_usd"] = token_trades["sell_price_usd"] - token_trades["buy_price_usd"]
-    token_trades["hold_time"] = (token_trades["sell_timestamp"] - token_trades["buy_timestamp"]).dt.days
+    # Reorder the columns
+    columns = [
+        "timestamp", "from", "to", "token_name", "token_id", "token_editions",
+        "token_address", "token_link"]
+
+    return transferred_tokens[columns].copy()
+
+
+def get_incoming_tokens(collected_tokens, dropped_tokens):
+    """Returns the list of user incoming tokens.
+
+    Parameters
+    ----------
+    collected_tokens: object
+        The pandas data frame with the user collected tokens.
+    dropped_tokens: object
+        The pandas data frame with the tokens dropped to the user.
+
+    Returns
+    -------
+    object
+        A pandas data frame with the user incoming tokens.
+
+    """
+    # Select the relevant columns from the collected tokens
+    columns = ["timestamp", "token_name", "token_id", "token_editions",
+       "token_address", "token_link", "buy_price", "buy_price_euros",
+       "buy_price_usd"]
+    collected_tokens = collected_tokens[columns].copy()
+
+    # Select the relevant columns from the dropped tokens
+    columns = ["timestamp", "token_name", "token_id", "token_editions",
+       "token_address", "token_link"]
+    dropped_tokens = dropped_tokens[columns].copy()
+
+    # Add the missing columns to the dropped tokens data frame
+    dropped_tokens["buy_price"] = 0.0
+    dropped_tokens["buy_price_euros"] = 0.0
+    dropped_tokens["buy_price_usd"] = 0.0
+
+    # Remove any entry in the collected and dropped tokens that is missing the
+    # token id or the token address information
+    cond = (collected_tokens["token_id"] != "") & (collected_tokens["token_address"] != "")
+    collected_tokens = collected_tokens[cond]
+    cond = (dropped_tokens["token_id"] != "") & (dropped_tokens["token_address"] != "")
+    dropped_tokens = dropped_tokens[cond]
+
+    # Get the user incoming tokens combining the collected and dropped tokens
+    incoming_tokens = pd.concat([collected_tokens, dropped_tokens])
+    incoming_tokens = incoming_tokens.sort_values(by="timestamp")
+    incoming_tokens = incoming_tokens.reset_index(drop=True)
+
+    # Assume one edition in entries missing the token editions information
+    incoming_tokens.loc[incoming_tokens["token_editions"] == "", "token_editions"] = "1"
+
+    # Change the token editions column type to int
+    incoming_tokens["token_editions"] = incoming_tokens["token_editions"].astype(int)
+
+    # Rename the time stamp column
+    incoming_tokens = incoming_tokens.rename(columns={"timestamp": "buy_timestamp"})
+
+    return incoming_tokens
+
+
+def get_outgoing_tokens(sold_tokens, transferred_tokens):
+    """Returns the list of user outgoing tokens.
+
+    Parameters
+    ----------
+    sold_tokens: object
+        The pandas data frame with the user sold tokens.
+    transferred_tokens: object
+        The pandas data frame with the user transferred tokens.
+
+    Returns
+    -------
+    object
+        A pandas data frame with the user outgoing tokens.
+
+    """
+    # Select the relevant columns from the sold tokens
+    columns = ["timestamp", "token_name", "token_id", "token_editions",
+       "token_address", "token_link", "sell_price", "sell_price_euros",
+       "sell_price_usd"]
+    sold_tokens = sold_tokens[columns].copy()
+
+    # Select the relevant columns from the transferred tokens
+    columns = ["timestamp", "token_name", "token_id", "token_editions",
+       "token_address", "token_link"]
+    transferred_tokens = transferred_tokens[columns].copy()
+
+    # Add the missing columns to the transferred tokens data frame
+    transferred_tokens["sell_price"] = 0.0
+    transferred_tokens["sell_price_euros"] = 0.0
+    transferred_tokens["sell_price_usd"] = 0.0
+
+    # Add a column to indicate if the token was sold or not
+    sold_tokens["sold"] = True
+    transferred_tokens["sold"] = False
+
+    # Get the user outgoing tokens combining the sold and transferred tokens
+    outgoing_tokens = pd.concat([sold_tokens, transferred_tokens])
+    outgoing_tokens = outgoing_tokens.sort_values(by="timestamp")
+    outgoing_tokens = outgoing_tokens.reset_index(drop=True)
+
+    # Assume one edition in entries missing the token editions information
+    outgoing_tokens.loc[outgoing_tokens["token_editions"] == "", "token_editions"] = "1"
+
+    # Change the token editions column type to int
+    outgoing_tokens["token_editions"] = outgoing_tokens["token_editions"].astype(int)
+
+    # Rename the time stamp column
+    outgoing_tokens = outgoing_tokens.rename(columns={"timestamp": "sell_timestamp"})
+
+    return outgoing_tokens
+
+
+def get_token_trades(collected_tokens, dropped_tokens, sold_tokens, transferred_tokens, hold_period):
+    """Returns the list of tokens trades done by the user.
+
+    Parameters
+    ----------
+    collected_tokens: object
+        The pandas data frame with the user collected tokens.
+    dropped_tokens: object
+        The pandas data frame with the tokens dropped to the user.
+    sold_tokens: object
+        The pandas data frame with the user sold tokens.
+    transferred_tokens: object
+        The pandas data frame with the user transferred tokens.
+    hold_period: int
+        The minimum holding time in days for the gains to be tax free.
+
+    Returns
+    -------
+    object
+        A pandas data frame with the user token trades.
+
+    """
+    # Get the user incoming and outgoing tokens
+    incoming_tokens = get_incoming_tokens(collected_tokens, dropped_tokens)
+    outgoing_tokens = get_outgoing_tokens(sold_tokens, transferred_tokens)
+
+    # Get the necessary numpy arrays
+    n_trades = len(outgoing_tokens)
+    buy_timestamp = outgoing_tokens["sell_timestamp"].to_numpy().copy()
+    buy_price = np.full(n_trades, 0.0)
+    buy_price_euros = np.full(n_trades, 0.0)
+    buy_price_usd = np.full(n_trades, 0.0)
+    gain = np.full(n_trades, 0.0)
+    gain_euros = np.full(n_trades, 0.0)
+    gain_usd = np.full(n_trades, 0.0)
+    taxed_gain = np.full(n_trades, 0.0)
+    taxed_gain_euros = np.full(n_trades, 0.0)
+    taxed_gain_usd = np.full(n_trades, 0.0)
+
+    for i, token in outgoing_tokens.iterrows():
+        # Get the sell information
+        sell_timestamp = token["sell_timestamp"]
+        sell_editions = token["token_editions"]
+        sell_price_per_edition = token["sell_price"] / sell_editions
+        sell_price_per_edition_euros = token["sell_price_euros"] / sell_editions
+        sell_price_per_edition_usd = token["sell_price_usd"] / sell_editions
+
+        # Check if the token is owed by the user at that time
+        cond = (incoming_tokens["token_id"] == token["token_id"]) & (
+            incoming_tokens["token_editions"] > 0) & (
+            incoming_tokens["token_address"] == token["token_address"]) & (
+            incoming_tokens["buy_timestamp"] <= sell_timestamp)
+
+        if cond.sum() > 0:
+            # Loop over the owned editions and calculate the combined buy price
+            indices = incoming_tokens.index[cond].to_numpy()
+
+            for index in indices:
+                # Get the buy information
+                buy_editions = incoming_tokens.loc[index, "token_editions"]
+                buy_price_per_edition = incoming_tokens.loc[index, "buy_price"] / buy_editions
+                buy_price_per_edition_euros = incoming_tokens.loc[index, "buy_price_euros"] / buy_editions
+                buy_price_per_edition_usd = incoming_tokens.loc[index, "buy_price_usd"] / buy_editions
+
+                # Calculate the traded gains
+                traded_editions = min(sell_editions, buy_editions)
+                buy_timestamp[i] = incoming_tokens.loc[index, "buy_timestamp"]
+                buy_price[i] += traded_editions * buy_price_per_edition
+                buy_price_euros[i] += traded_editions * buy_price_per_edition_euros
+                buy_price_usd[i] += traded_editions * buy_price_per_edition_usd
+                gain[i] += traded_editions * (sell_price_per_edition - buy_price_per_edition)
+                gain_euros[i] += traded_editions * (sell_price_per_edition_euros - buy_price_per_edition_euros)
+                gain_usd[i] += traded_editions * (sell_price_per_edition_usd - buy_price_per_edition_usd)
+
+                # Check if the gains are taxable
+                if (sell_timestamp - incoming_tokens.loc[index, "buy_timestamp"]).days <= hold_period:
+                    taxed_gain[i] += traded_editions * (sell_price_per_edition - buy_price_per_edition)
+                    taxed_gain_euros[i] += traded_editions * (sell_price_per_edition_euros - buy_price_per_edition_euros)
+                    taxed_gain_usd[i] += traded_editions * (sell_price_per_edition_usd - buy_price_per_edition_usd)
+
+                # Update the incoming tokens information
+                incoming_tokens.loc[index, "token_editions"] -= traded_editions
+                incoming_tokens.loc[index, "buy_price"] -= traded_editions * buy_price_per_edition
+                incoming_tokens.loc[index, "buy_price_euros"] -= traded_editions * buy_price_per_edition
+                incoming_tokens.loc[index, "buy_price_usd"] -= traded_editions * buy_price_per_edition
+
+                # Update the sell editions
+                sell_editions -= traded_editions
+
+                # Exit the loop if all the sell editions were taken into account
+                if sell_editions == 0:
+                    break
+
+        # Check if there are still some sell editions to take into account
+        if sell_editions > 0:
+            # Assume that the token editions were bought for free just before selling them
+            buy_timestamp[i] = sell_timestamp
+            gain[i] += sell_editions * sell_price_per_edition
+            gain_euros[i] += sell_editions * sell_price_per_edition_euros
+            gain_usd[i] += sell_editions * sell_price_per_edition_usd
+            taxed_gain[i] += sell_editions * sell_price_per_edition
+            taxed_gain_euros[i] += sell_editions * sell_price_per_edition_euros
+            taxed_gain_usd[i] += sell_editions * sell_price_per_edition_usd
+
+    # Build the token trades data frame from the sold tokens data frame
+    token_trades = outgoing_tokens.copy()
+    token_trades["buy_timestamp"] = buy_timestamp
+    token_trades["buy_price"] = buy_price
+    token_trades["buy_price_euros"] = buy_price_euros
+    token_trades["buy_price_usd"] = buy_price_usd
+    token_trades["gain"] = gain
+    token_trades["gain_euros"] = gain_euros
+    token_trades["gain_usd"] = gain_usd
+    token_trades["taxed_gain"] = taxed_gain
+    token_trades["taxed_gain_euros"] = taxed_gain_euros
+    token_trades["taxed_gain_usd"] = taxed_gain_usd
+    token_trades = token_trades[token_trades["sold"]]
 
     # Reorder the columns
     columns = [
         "token_name", "token_id", "token_editions", "token_address",
-        "token_link", "buy_timestamp", "sell_timestamp", "hold_time",
-        "buy_price", "sell_price", "gain", "buy_price_euros",
-        "sell_price_euros", "gain_euros", "buy_price_usd", "sell_price_usd",
-        "gain_usd"]
+        "token_link", "buy_timestamp", "sell_timestamp", "buy_price",
+        "sell_price", "gain", "taxed_gain", "buy_price_euros",
+        "sell_price_euros", "gain_euros", "taxed_gain_euros", "buy_price_usd",
+        "sell_price_usd", "gain_usd", "taxed_gain_usd"]
 
     return token_trades[columns].copy()
 
@@ -1278,6 +1717,7 @@ def get_tez_exchange_gains(operations, hold_period):
     tez_to_euros = operations["tez_to_euros"].to_numpy().copy()
     tez_to_usd = operations["tez_to_usd"].to_numpy().copy()
     is_collect = (operations["collect_amount"] > 0).to_numpy().copy()
+    is_sell_tez = (operations["sell_tez_amount"] > 0).to_numpy().copy()
     gain_euros = np.full(len(spent_amount), 0.0)
     gain_usd = np.full(len(spent_amount), 0.0)
     taxed_gain_euros = np.full(len(spent_amount), 0.0)
@@ -1331,8 +1771,8 @@ def get_tez_exchange_gains(operations, hold_period):
             spent_amount[i] -= subtract_amount
             received_amount[counter] -= subtract_amount
 
-            # Check if it is a collect operation
-            if is_collect[i]:
+            # Check if it is a collect or tez sell operation
+            if is_collect[i] or is_sell_tez[i]:
                 # Calculate the gains from the tez exchanges
                 new_gain_euros = subtract_amount * (tez_to_euros[i] - tez_to_euros[counter])
                 new_gain_usd = subtract_amount * (tez_to_usd[i] - tez_to_usd[counter])

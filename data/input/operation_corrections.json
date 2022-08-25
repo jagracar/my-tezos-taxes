@@ -1,8 +1,20 @@
 {
+    "ooYc5HPLFGfYWY7P1bMK8d9aau7LBYDFHYiwLmFQ4qzVqRZwqk3": {
+        "comment": "Buy Bruto by Arya Mularama",
+        "ignore": true
+    },
+    "oniWJ5ETW1npC18YJBNysJACeYq9ob2aPNJE4GMMhvyvyGw5baq": {
+        "comment": "Return Bruto by Arya Mularama",
+        "ignore": true
+    },
 	"oo38nLvd5qnabN4fK2N49aWPrnK3JmA8cb6BFfNyzgmZzTaS5jM": {
 		"comment": "Buy 1/1 Z.Lieberman",
 		"ignore": true
 	},
+    "ooKKXY3rjd2MVLmoDE7R1mevh49po1APRaXfHGkEstDGR1RzkPE": {
+        "comment": "Return 1/1 Z.Lieberman",
+        "ignore": true
+    },
 	"onzPve3arjH4rq3neaRsgMbbVBhSRgiSpUtj5eUaYGBaPMKrPg2": {
 		"comment": "Return 1/1 Z.Lieberman",
 		"ignore": true
@@ -35,13 +47,6 @@
 		"kind": "Donation to the Processing Foundation",
 		"donation": true
 	},
-	"oooBz3RF3JXjQNfm8a8MC8JynmPKrhAt4avqUdsgHtfXT2opUeQ": {
-		"comment": "Tezos domain renovation",
-		"kind": "Tezos domain renovation",
-		"collect": true,
-		"token_editions": 1,
-		"token_address": "KT1GBZmSxmnKJXGMdMLbugPfLyUPmuLSMwKS"
-    },
 	"opCsLjX7bXmsRqgkRx2PGKANYeQ65dH2PvfYE6qduSwuCtgCgjx": {
 		"comment": "Faucet temporal help: receive tez"
 	},

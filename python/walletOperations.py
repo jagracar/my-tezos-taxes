@@ -12,6 +12,9 @@ user_first_wallet = list(user_wallets.keys())[0]
 # Load the user baker wallets
 baker_wallets = read_json_file(os.path.join(data_directory, "input", "baker_wallets.json"))
 
+# Load the exchange wallets
+exchange_wallets = read_json_file(os.path.join(data_directory, "input", "exchange_wallets.json"))
+
 # Get the user raw transactions and originations information
 raw_transactions = get_user_transactions(user_wallets)
 raw_originations = get_user_originations(user_wallets)
@@ -69,6 +72,8 @@ for t in raw_transactions:
         "delegation": False,
         "prize": False,
         "donation": False,
+        "buy_tez": t["sender"]["address"] in exchange_wallets,
+        "sell_tez": t["target"]["address"] in exchange_wallets,
         "amount": t["amount"] / 1e6,
         "fees": ((t["bakerFee"] + t["storageFee"] + t["allocationFee"]) / 1e6) if (t["status"] == "applied") else (t["bakerFee"] / 1e6),
         "tez_to_euros": t["quote"]["eur"],
@@ -297,7 +302,6 @@ for t in raw_transactions:
         transaction["kind"] = "Materia mint"
         transaction["collect"] = True
         transaction["token_id"] = "0"
-        transaction["token_editions"] = int(transaction["parameters"]["amount"])
         transaction["token_address"] = TOKENS["Materia"]
     elif transaction["entrypoint"] == "buy":
         if transaction["target"] == SMART_CONTRACTS["Skeles minter"]:
@@ -305,10 +309,16 @@ for t in raw_transactions:
             transaction["collect"] = True
             transaction["token_editions"] = int(transaction["parameters"])
             transaction["token_address"] = TOKENS["Skeles"]
-    elif transaction["entrypoint"] == "execute":
-        if transaction["target"] == TOKENS["Tezos domain token"]:
-            transaction["kind"] = "Tezos domain mint"
+        elif transaction["target"] == SMART_CONTRACTS["Tezos Domains TLDRegistrar Buy"]:
+            transaction["kind"] = "tezos domain mint"
             transaction["collect"] = True
+            transaction["token_editions"] = "1"
+            transaction["token_address"] = TOKENS["Tezos domain token"]
+    elif transaction["entrypoint"] == "execute":
+        if transaction["sender"] == SMART_CONTRACTS["Tezos Domains TLDRegistrar"]:
+            transaction["kind"] = "tezos domain mint"
+            transaction["collect"] = True
+            transaction["token_editions"] = "1"
             transaction["token_address"] = TOKENS["Tezos domain token"]
 
     # Check if the transaction is connected with a token transfer
@@ -749,14 +759,17 @@ for t in raw_transactions:
         (transaction["sender"] == SMART_CONTRACTS["Tezos Domains TLDRegistrar Commit"]) or
         (transaction["target"] == SMART_CONTRACTS["Tezos Domains TLDRegistrar Commit"]) or
         (transaction["sender"] == SMART_CONTRACTS["Tezos Domains TLDRegistrar Buy"]) or
-        (transaction["target"] == SMART_CONTRACTS["Tezos Domains TLDRegistrar Buy"]) or
         (transaction["target"] == SMART_CONTRACTS["Tezos Domains NameRegistry ClaimReverseRecord"]) or
+        (transaction["sender"] == SMART_CONTRACTS["Tezos Domains NameRegistry ClaimReverseRecord"]) or
         (transaction["sender"] == SMART_CONTRACTS["Tezos Domains NameRegistry UpdateRecord"]) or
         (transaction["target"] == SMART_CONTRACTS["Tezos Domains NameRegistry UpdateRecord"])):
         transaction["kind"] = "tezos domains operation"
 
-    if transaction["target"] == SMART_CONTRACTS["Tezos Domains TLDRegistrar Buy"]:
-        transaction["collect"] = True
+    if transaction["entrypoint"] == "renew":
+        if transaction["target"] == SMART_CONTRACTS["Tezos Domains registrar"]:
+            transaction["kind"] = "tezos domain renovation"
+            transaction["token_editions"] = "1"
+            transaction["token_address"] = TOKENS["Tezos domain token"]
 
     if ((transaction["target"] == SMART_CONTRACTS["teia multisig"]) or
         (transaction["sender"] == SMART_CONTRACTS["teia multisig"]) or
@@ -838,12 +851,40 @@ for t in raw_transactions:
     if transaction["entrypoint"] == "tokenToTezPayment":
         if transaction["target"] in [SMART_CONTRACTS["QuipuSwap hDAO old"], SMART_CONTRACTS["QuipuSwap hDAO"]]:
             transaction["kind"] = "sell hDAO in QuipuSwap"
+            transaction["collection_sale"] = True
             transaction["token_id"] = "0"
             transaction["token_amount"] = int(transaction["parameters"]["amount"])
             transaction["token_address"] = TOKENS["hDAO"]
+        elif transaction["target"] == SMART_CONTRACTS["QuipuSwap wUSDC"]:
+            transaction["kind"] = "sell wUSDC in QuipuSwap"
+            transaction["collection_sale"] = True
+            transaction["token_id"] = "0"
+            transaction["token_amount"] = int(transaction["parameters"]["amount"])
+            transaction["token_address"] = TOKENS["wUSDC"]
     elif transaction["entrypoint"] == "tezToTokenPayment":
         if transaction["target"] in [SMART_CONTRACTS["QuipuSwap hDAO old"], SMART_CONTRACTS["QuipuSwap hDAO"]]:
             transaction["kind"] = "buy hDAO in QuipuSwap"
+            transaction["collect"] = True
+            transaction["token_id"] = "0"
+            transaction["token_address"] = TOKENS["hDAO"]
+        elif transaction["target"] == SMART_CONTRACTS["QuipuSwap wUSDC"]:
+            transaction["kind"] = "buy wUSDC in QuipuSwap"
+            transaction["collect"] = True
+            transaction["token_id"] = "17"
+            transaction["token_address"] = TOKENS["wUSDC"]
+
+    if transaction["sender"] in [SMART_CONTRACTS["QuipuSwap hDAO old"], SMART_CONTRACTS["QuipuSwap hDAO"]]:
+        if transaction["amount"] > 0:
+            transaction["kind"] = "sell hDAO in QuipuSwap"
+            transaction["collection_sale"] = True
+            transaction["token_id"] = "0"
+            transaction["token_address"] = TOKENS["hDAO"]
+    elif transaction["sender"] == SMART_CONTRACTS["QuipuSwap wUSDC"]:
+        if transaction["amount"] > 0:
+            transaction["kind"] = "sell wUSDC in QuipuSwap"
+            transaction["collection_sale"] = True
+            transaction["token_id"] = "17"
+            transaction["token_address"] = TOKENS["wUSDC"]
 
     if transaction["entrypoint"] == "accept_invitation":
         if transaction["target"] == SMART_CONTRACTS["objkt.com Minting Factory"]:
@@ -884,6 +925,8 @@ for o in raw_originations:
         "delegation": False,
         "prize": False,
         "donation": False,
+        "buy_tez": False,
+        "sell_tez": False,
         "amount": o["contractBalance"] / 1e6,
         "fees": ((o["bakerFee"] + o["storageFee"] + o["allocationFee"]) / 1e6) if (o["status"] == "applied") else (o["bakerFee"] / 1e6),
         "tez_to_euros": o["quote"]["eur"],
@@ -926,6 +969,8 @@ for r in raw_reveals:
         "delegation": False,
         "prize": False,
         "donation": False,
+        "buy_tez": False,
+        "sell_tez": False,
         "amount": 0,
         "fees": r["bakerFee"] / 1e6,
         "tez_to_euros": r["quote"]["eur"],
@@ -968,6 +1013,8 @@ for d in raw_delegations:
         "delegation": True,
         "prize": False,
         "donation": False,
+        "buy_tez": False,
+        "sell_tez": False,
         "amount": 0,
         "fees": d["bakerFee"] / 1e6,
         "tez_to_euros": d["quote"]["eur"],
@@ -1002,6 +1049,7 @@ for operation in combined_operations:
 aliases = {}
 aliases.update(user_wallets)
 aliases.update(baker_wallets)
+aliases.update(exchange_wallets)
 aliases.update(token_aliases)
 aliases.update(smart_contract_aliases)
 aliases.update({address: "Burn address" for address in burn_addresses})
@@ -1021,17 +1069,20 @@ columns = [
     "sender", "target", "is_initiator", "is_sender", "is_target", "applied",
     "internal", "ignore", "mint", "collect", "active_offer", "art_sale",
     "collection_sale", "staking", "origination", "reveal", "delegation",
-    "prize", "donation", "amount", "fees", "received_amount", "art_sale_amount",
-    "collection_sale_amount", "staking_rewards_amount", "prize_amount",
+    "prize", "donation", "buy_tez", "sell_tez", "amount", "fees",
+    "received_amount", "art_sale_amount", "collection_sale_amount",
+    "staking_rewards_amount", "prize_amount", "buy_tez_amount",
     "received_amount_others", "spent_amount", "collect_amount",
-    "active_offer_amount", "donation_amount", "spent_amount_others",
-    "spent_fees", "tez_to_euros", "tez_to_usd", "token_name", "token_id",
-    "token_editions", "token_address", "tzkt_link", "comment", "teztok"]
+    "active_offer_amount", "donation_amount", "sell_tez_amount",
+    "spent_amount_others", "spent_fees", "tez_to_euros", "tez_to_usd",
+    "token_name", "token_id", "token_editions", "token_address", "tzkt_link",
+    "comment", "teztok"]
 format = [
     "%s", "%i", "%f", "%s", "%s", "%s", "%s", "%s", "%r", "%r", "%r", "%r",
     "%r", "%r", "%r", "%r", "%r", "%r", "%r", "%r", "%r", "%r", "%r", "%r",
-    "%r", "%f", "%f", "%f", "%f", "%f", "%f", "%f", "%f", "%f", "%f", "%f",
-    "%f", "%f", "%f", "%f", "%f", "%s", "%s", "%s", "%s", "%s", "%s", "%r"]
+    "%r", "%r", "%r", "%f", "%f", "%f", "%f", "%f", "%f", "%f", "%f", "%f",
+    "%f", "%f", "%f", "%f", "%f", "%f", "%f", "%f", "%f", "%s", "%s", "%s",
+    "%s", "%s", "%s", "%r"]
 
 with open(os.path.join(data_directory, "output", file_name), "w", newline="\n") as output_file:
     writer = csv.writer(output_file)
@@ -1058,12 +1109,14 @@ with open(os.path.join(data_directory, "output", file_name), "w", newline="\n") 
         collection_sale_amount = amount if (is_target and applied and (not ignore) and op["collection_sale"]) else 0
         staking_rewards_amount = amount if (is_target and applied and (not ignore) and op["staking"]) else 0
         prize_amount = amount if (is_target and applied and (not ignore) and op["prize"]) else 0
-        received_amount_others = amount if (is_target and applied and (not ignore) and (not (op["art_sale"] or op["collection_sale"] or op["staking"] or op["prize"]))) else 0
+        buy_tez_amount = amount if (is_target and applied and (not ignore) and op["buy_tez"]) else 0
+        received_amount_others = amount if (is_target and applied and (not ignore) and (not (op["art_sale"] or op["collection_sale"] or op["staking"] or op["prize"] or op["buy_tez"]))) else 0
         spent_amount = amount if (is_sender and applied and (not ignore) and (not op["active_offer"])) else 0
         collect_amount = amount if (is_sender and applied and (not ignore) and op["collect"]) else 0
         active_offer_amount = amount if (is_sender and applied and (not ignore) and op["active_offer"]) else 0
         donation_amount = amount if (is_sender and applied and (not ignore) and op["donation"]) else 0
-        spent_amount_others = amount if (is_sender and applied and (not ignore) and (not (op["collect"] or op["active_offer"] or op["donation"]))) else 0
+        sell_tez_amount = amount if (is_sender and applied and (not ignore) and op["sell_tez"]) else 0
+        spent_amount_others = amount if (is_sender and applied and (not ignore) and (not (op["collect"] or op["active_offer"] or op["donation"] or op["sell_tez"]))) else 0
         spent_fees = fees if (is_initiator or is_sender) else 0
 
         # Calculate the tez balance
@@ -1109,6 +1162,8 @@ with open(os.path.join(data_directory, "output", file_name), "w", newline="\n") 
             op["delegation"],
             op["prize"],
             op["donation"],
+            op["buy_tez"],
+            op["sell_tez"],
             amount,
             fees,
             received_amount,
@@ -1116,11 +1171,13 @@ with open(os.path.join(data_directory, "output", file_name), "w", newline="\n") 
             collection_sale_amount,
             staking_rewards_amount,
             prize_amount,
+            buy_tez_amount,
             received_amount_others,
             spent_amount,
             collect_amount,
             active_offer_amount,
             donation_amount,
+            sell_tez_amount,
             spent_amount_others,
             spent_fees,
             op["tez_to_euros"],
