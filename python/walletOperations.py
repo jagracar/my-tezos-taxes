@@ -82,8 +82,7 @@ for t in raw_transactions:
         "token_editions": None,
         "token_address": None,
         "hash": t["hash"],
-        "comment": "",
-        "teztok": False}
+        "comment": ""}
 
     # Check if it's an internal transaction between the user wallets
     transaction["internal"] = (transaction["sender"] in user_wallets) and (transaction["target"] in user_wallets)
@@ -100,7 +99,6 @@ for t in raw_transactions:
         transaction["token_id"] = mint["token_id"]
         transaction["token_editions"] = mint["editions"]
         transaction["token_address"] = mint["fa2_address"]
-        transaction["teztok"] = True
 
     if hash in user_swaps:
         swap = user_swaps[hash]
@@ -117,7 +115,6 @@ for t in raw_transactions:
         transaction["token_id"] = swap["token_id"]
         transaction["token_editions"] = token_editions
         transaction["token_address"] = swap["fa2_address"]
-        transaction["teztok"] = True
 
     if hash in user_collects:
         collect = user_collects[hash]
@@ -134,7 +131,6 @@ for t in raw_transactions:
         transaction["token_id"] = collect["token_id"]
         transaction["token_editions"] = token_editions
         transaction["token_address"] = collect["fa2_address"]
-        transaction["teztok"] = True
 
         # Ignore transactions associated to offers that were not fulfilled and
         # are not active
@@ -148,7 +144,9 @@ for t in raw_transactions:
         transaction["token_id"] = bid["token_id"]
         transaction["token_editions"] = 1
         transaction["token_address"] = bid["fa2_address"]
-        transaction["teztok"] = True
+
+        # Ignore transactions associated to auction bids that were not won
+        transaction["ignore"] = not transaction["collect"]
 
     if hash in user_art_sales:
         sale = user_art_sales[hash]
@@ -156,7 +154,6 @@ for t in raw_transactions:
         transaction["token_id"] = sale["token_id"]
         transaction["token_editions"] = sale["amount"] if sale["amount"] is not None else 1
         transaction["token_address"] = sale["fa2_address"]
-        transaction["teztok"] = True
 
     if hash in user_collection_sales:
         sale = user_collection_sales[hash]
@@ -164,7 +161,6 @@ for t in raw_transactions:
         transaction["token_id"] = sale["token_id"]
         transaction["token_editions"] = sale["amount"] if sale["amount"] is not None else 1
         transaction["token_address"] = sale["fa2_address"]
-        transaction["teztok"] = True
 
     # Check if it is a simple tez transaction
     if transaction["entrypoint"] is None and transaction["amount"] > 0:
@@ -270,6 +266,17 @@ for t in raw_transactions:
             transaction["token_id"] = transaction["parameters"]["token_id"]
             transaction["token_editions"] = int(transaction["parameters"]["amount"])
             transaction["token_address"] = TOKENS["NEONZ"]
+        elif transaction["target"] == SMART_CONTRACTS["Ziggurats minter"]:
+            transaction["kind"] = "Ziggurats mint"
+            transaction["collect"] = True
+            transaction["token_editions"] = int(transaction["parameters"])
+            transaction["token_address"] = TOKENS["Ziggurats"]
+        elif transaction["target"] == TOKENS["Ziggurats"]:
+            transaction["kind"] = "Ziggurats mint"
+            transaction["collect"] = True
+            transaction["token_id"] = transaction["parameters"]["token_id"]
+            transaction["token_editions"] = int(transaction["parameters"]["amount"])
+            transaction["token_address"] = TOKENS["Ziggurats"]
         elif transaction["target"] == TOKENS["Hash Three Points token"]:
             transaction["kind"] = "Hash Three Points mint"
             transaction["collect"] = True
@@ -739,6 +746,10 @@ for t in raw_transactions:
             transaction["token_editions"] = int(transaction["parameters"]["amount"])
             transaction["token_address"] = TOKENS["Materia"]
 
+    if transaction["entrypoint"] == "withdraw_outstanding_tez":
+        if transaction["target"] == SMART_CONTRACTS["versum registry"]:
+            transaction["kind"] = "withdraw outstanding tez from versum registry"
+
     if transaction["entrypoint"] in ["wrap", "unwrap", "approve"]:
         if transaction["target"] == SMART_CONTRACTS["wXTZ objkt.com"]:
             transaction["kind"] = "%s objkt.com wXTZ" % transaction["entrypoint"]
@@ -858,9 +869,15 @@ for t in raw_transactions:
         elif transaction["target"] == SMART_CONTRACTS["QuipuSwap wUSDC"]:
             transaction["kind"] = "sell wUSDC in QuipuSwap"
             transaction["collection_sale"] = True
-            transaction["token_id"] = "0"
+            transaction["token_id"] = "17"
             transaction["token_amount"] = int(transaction["parameters"]["amount"])
             transaction["token_address"] = TOKENS["wUSDC"]
+        elif transaction["target"] == SMART_CONTRACTS["QuipuSwap uUSD"]:
+            transaction["kind"] = "sell uUSD in QuipuSwap"
+            transaction["collection_sale"] = True
+            transaction["token_id"] = "0"
+            transaction["token_amount"] = int(transaction["parameters"]["amount"])
+            transaction["token_address"] = TOKENS["uUSD"]
     elif transaction["entrypoint"] == "tezToTokenPayment":
         if transaction["target"] in [SMART_CONTRACTS["QuipuSwap hDAO old"], SMART_CONTRACTS["QuipuSwap hDAO"]]:
             transaction["kind"] = "buy hDAO in QuipuSwap"
@@ -872,6 +889,11 @@ for t in raw_transactions:
             transaction["collect"] = True
             transaction["token_id"] = "17"
             transaction["token_address"] = TOKENS["wUSDC"]
+        elif transaction["target"] == SMART_CONTRACTS["QuipuSwap uUSD"]:
+            transaction["kind"] = "buy uUSD in QuipuSwap"
+            transaction["collect"] = True
+            transaction["token_id"] = "0"
+            transaction["token_address"] = TOKENS["uUSD"]
 
     if transaction["sender"] in [SMART_CONTRACTS["QuipuSwap hDAO old"], SMART_CONTRACTS["QuipuSwap hDAO"]]:
         if transaction["amount"] > 0:
@@ -885,6 +907,12 @@ for t in raw_transactions:
             transaction["collection_sale"] = True
             transaction["token_id"] = "17"
             transaction["token_address"] = TOKENS["wUSDC"]
+    elif transaction["sender"] == SMART_CONTRACTS["QuipuSwap uUSD"]:
+        if transaction["amount"] > 0:
+            transaction["kind"] = "sell uUSD in QuipuSwap"
+            transaction["collection_sale"] = True
+            transaction["token_id"] = "0"
+            transaction["token_address"] = TOKENS["uUSD"]
 
     if transaction["entrypoint"] == "accept_invitation":
         if transaction["target"] == SMART_CONTRACTS["objkt.com Minting Factory"]:
@@ -935,8 +963,7 @@ for o in raw_originations:
         "token_editions": None,
         "token_address": None,
         "hash": o["hash"],
-        "comment": "",
-        "teztok": False}
+        "comment": ""}
 
     # Add the processed origination
     originations.append(origination)
@@ -979,8 +1006,7 @@ for r in raw_reveals:
         "token_editions": None,
         "token_address": None,
         "hash": r["hash"],
-        "comment": "",
-        "teztok": False}
+        "comment": ""}
 
     # Add the processed reveal
     reveals.append(reveal)
@@ -1023,8 +1049,7 @@ for d in raw_delegations:
         "token_editions": None,
         "token_address": None,
         "hash": r["hash"],
-        "comment": "",
-        "teztok": False}
+        "comment": ""}
 
     # Add the processed delegation
     delegations.append(delegation)
@@ -1076,13 +1101,13 @@ columns = [
     "active_offer_amount", "donation_amount", "sell_tez_amount",
     "spent_amount_others", "spent_fees", "tez_to_euros", "tez_to_usd",
     "token_name", "token_id", "token_editions", "token_address", "tzkt_link",
-    "comment", "teztok"]
+    "comment"]
 format = [
     "%s", "%i", "%f", "%s", "%s", "%s", "%s", "%s", "%r", "%r", "%r", "%r",
     "%r", "%r", "%r", "%r", "%r", "%r", "%r", "%r", "%r", "%r", "%r", "%r",
     "%r", "%r", "%r", "%f", "%f", "%f", "%f", "%f", "%f", "%f", "%f", "%f",
     "%f", "%f", "%f", "%f", "%f", "%f", "%f", "%f", "%f", "%s", "%s", "%s",
-    "%s", "%s", "%s", "%r"]
+    "%s", "%s", "%s"]
 
 with open(os.path.join(data_directory, "output", file_name), "w", newline="\n") as output_file:
     writer = csv.writer(output_file)
@@ -1187,8 +1212,7 @@ with open(os.path.join(data_directory, "output", file_name), "w", newline="\n") 
             op["token_editions"] if op["token_editions"] is not None else "",
             token_address if token_address is not None else "",
             "https://tzkt.io/%s" % op["hash"],
-            op["comment"],
-            op["teztok"]]
+            op["comment"]]
         writer.writerow(data)
 
 # Save the unprocessed transactions in a json file

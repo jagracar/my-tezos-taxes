@@ -44,7 +44,8 @@ TOKENS = {
     "Rarible token": "KT18pVpRXKPY2c4U2yFEGSH3ZnhB2kL8kwXS",
     "Les Elefants Terribles token": "KT19BLv8px4VMLduVnYgahqFbsJ19FJXamUG",
     "The Moments token": "KT1CNHwTyjFrKnCstRoMftyFVwoNzF6Xxhpy",
-    "wUSDC": "KT18fp5rcTW7mbWDmzFwjLDUhs5MeJmagDSZ"
+    "wUSDC": "KT18fp5rcTW7mbWDmzFwjLDUhs5MeJmagDSZ",
+    "uUSD": "KT1XRPEPXbZK25r3Htzp2o1x7xdMMmfocKNW"
 }
 
 # The main tezos tokens mint prices in tez
@@ -65,6 +66,7 @@ SMART_CONTRACTS = {
     "GOGOs minter": "KT1CExkW5WoKqoiv5An6uaZzN6i2Q3mxcqpW",
     "NEONZ minter": "KT1QMAN7pWrR7fdiiMZ8mtVMMeFw2nADcVAH",
     "Skeles minter": "KT1AvxTNETj3U4b3wKYxkX6CKya1EgLZezv8",
+    "Ziggurats minter": "KT1NC4pPLbhcw5JRq89NnHgwXg9uGztSZm1k",
     "VesselsGen0 minter": "KT1U1GDQDE7C9DNfE9iSojsKfWf5zUXdSVde",
     "FXHASH minter v1": "KT1AEVuykWeuuFX7QkEAMNtffzwhe1Z98hJS",
     "FXHASH minter v2": "KT1XCoGnfupWk7Sp8536EfrxcP73LmT68Nyr",
@@ -142,7 +144,8 @@ SMART_CONTRACTS = {
     "Ukraine war donations contract": "KT1DWnLiUkNtAQDErXxudFEH63JC6mqg3HEx",
     "QuipuSwap hDAO old": "KT1Qm3urGqkRsWsovGzNb2R81c3dSfxpteHG",
     "QuipuSwap hDAO": "KT1QxLqukyfohPV5kPkw97Rs6cw1DDDvYgbB",
-    "QuipuSwap wUSDC": "KT1U2hs5eNdeCpHouAvQXGMzGFGJowbhjqmo"
+    "QuipuSwap wUSDC": "KT1U2hs5eNdeCpHouAvQXGMzGFGJowbhjqmo",
+    "QuipuSwap uUSD": "KT1EtjRRCBC2exyCRXz8UfV7jz7svnkqi7di"
 }
 
 
@@ -604,6 +607,56 @@ def get_user_tez_balance(user_wallets):
     return combined_tez_balance
 
 
+def get_user_minted_tokens(user_wallets):
+    """Returns the list of user minted tokens.
+
+    Parameters
+    ----------
+    user_wallets: list
+        The user wallet addresses.
+
+    Returns
+    -------
+    dict
+        A python dictionary with user minted tokens.
+
+    """
+    # Get user minted tokens
+    query = """
+        query UserMintedRaribleTokens {
+            tokens(where: {creators: {_has_keys_any: ["%s"]}}, order_by: {minted_at: asc}, limit: **LIMIT**, offset: **OFFSET**) {
+                token_id
+                fa2_address
+            }
+        }
+    """ % '","'.join(user_wallets)
+    tokens = get_teztok_query_result({"query": query}, kind="tokens")
+
+    # Add the tokens minted in rarible
+    query = """
+        query UserMintedRaribleTokens {
+            tokens(where: {minter_address: {_in: ["%s"]}, fa2_address: {_eq: "KT18pVpRXKPY2c4U2yFEGSH3ZnhB2kL8kwXS"}}, order_by: {minted_at: asc}, limit: **LIMIT**, offset: **OFFSET**) {
+                token_id
+                fa2_address
+            }
+        }
+    """ % '","'.join(user_wallets)
+    tokens += get_teztok_query_result({"query": query}, kind="tokens")
+
+    # Store the information in a better format
+    minted_tokens = {}
+
+    for token in tokens:
+        token_address = token["fa2_address"]
+
+        if token_address not in minted_tokens:
+            minted_tokens[token_address] = []
+
+        minted_tokens[token_address].append(token["token_id"])
+
+    return minted_tokens
+
+
 def get_user_mints(user_wallets):
     """Returns the complete list of user mint operations.
 
@@ -841,6 +894,7 @@ def get_user_won_auctions(user_wallets):
                 auction_id
                 token_id
                 fa2_address
+                price
             }
         }
     """ % ('","'.join(user_wallets))
@@ -856,9 +910,9 @@ def get_user_won_auctions(user_wallets):
             auctions[token_address] = {}
 
         if token_id not in auctions[token_address]:
-            auctions[token_address][token_id] = []
+            auctions[token_address][token_id] = {}
 
-        auctions[token_address][token_id].append(auction["auction_id"])
+        auctions[token_address][token_id][auction["auction_id"]] = auction["price"]
 
     return auctions
 
@@ -885,6 +939,7 @@ def get_user_auction_bids(user_wallets):
                 timestamp
                 ophash
                 auction_id
+                bidder_address
                 token_id
                 fa2_address
                 bid
@@ -896,14 +951,53 @@ def get_user_auction_bids(user_wallets):
     # Get the won auctions
     won_auctions = get_user_won_auctions(user_wallets)
 
-    # Indicate which auctions were won
+    # Get the other users bids associated with the user auctions
+    auctions = {}
+
     for bid in auction_bids:
+        auction_id = bid["auction_id"]
         token_id = bid["token_id"]
         token_address = bid["fa2_address"]
-        bid["won_auction"] = False
 
-        if token_address in won_auctions and token_id in won_auctions[token_address]:
-            bid["won_auction"] = bid["auction_id"] in won_auctions[token_address][token_id]
+        if (token_address in auctions) and (
+            token_id in auctions[token_address]) and (
+            auction_id in auctions[token_address][token_id]):
+            continue
+
+        query = """
+            query OtherUserAuctionBids {
+                events(where: {bidder_address: {_nin: ["%s"]}, auction_id: {_eq: "%s"}, fa2_address: {_eq: "%s"}, token_id: {_eq: "%s"}}, order_by: {timestamp: asc}, limit: **LIMIT**, offset: **OFFSET**) {
+                    type
+                    timestamp
+                    ophash
+                    auction_id
+                    bidder_address
+                    token_id
+                    fa2_address
+                    bid
+                }
+            }
+        """ % ('","'.join(user_wallets), auction_id, token_address, token_id)
+        auction_bids += get_teztok_query_result({"query": query}, kind="events")
+
+        if token_address not in auctions:
+            auctions[token_address] = {}
+
+        if token_id not in auctions[token_address]:
+            auctions[token_address][token_id] = []
+
+        auctions[token_address][token_id].append(auction_id)
+
+    # Indicate which bid won the auction
+    for bid in auction_bids:
+        token_address = bid["fa2_address"]
+        token_id = bid["token_id"]
+        auction_id = bid["auction_id"]
+        bid_amount = bid["bid"]
+        bid["won_auction"] = (token_address in won_auctions) and (
+            token_id in won_auctions[token_address]) and (
+            auction_id in won_auctions[token_address][token_id]) and (
+            bid_amount == won_auctions[token_address][token_id][auction_id])
 
     return {bid["ophash"]: bid for bid in auction_bids}
 
@@ -924,16 +1018,7 @@ def get_user_art_sales(user_wallets):
 
     """
     # Get the tokens that the user has minted
-    mints = get_user_mints(user_wallets)
-    minted_tokens = {}
-
-    for mint in mints.values():
-        token_address = mint["fa2_address"]
-
-        if token_address not in minted_tokens:
-            minted_tokens[token_address] = []
-
-        minted_tokens[token_address].append(mint["token_id"])
+    minted_tokens = get_user_minted_tokens(user_wallets)
 
     # Get the user art sales for each minted token
     art_sales = []
@@ -972,9 +1057,13 @@ def get_user_collection_sales(user_wallets):
         A python dictionary with user collection sale operations information.
 
     """
+    # Get the tokens that the user has minted
+    minted_tokens = get_user_minted_tokens(user_wallets)
+
+    # Get the user sales
     query = """
-        query UserCollectionSales {
-            events(where: {seller_address: {_in: ["%s"]}, implements: {_eq: "SALE"}, token: {artist_address: {_nin: ["%s"]}}}, order_by: {timestamp: asc}, limit: **LIMIT**, offset: **OFFSET**) {
+        query UserSales {
+            events(where: {seller_address: {_in: ["%s"]}, implements: {_eq: "SALE"}}, order_by: {timestamp: asc}, limit: **LIMIT**, offset: **OFFSET**) {
                 type
                 timestamp
                 ophash
@@ -984,8 +1073,15 @@ def get_user_collection_sales(user_wallets):
                 price
             }
         }
-    """ % ('","'.join(user_wallets), '","'.join(user_wallets))
-    collection_sales = get_teztok_query_result({"query": query}, kind="events")
+    """ % ('","'.join(user_wallets))
+    sales = get_teztok_query_result({"query": query}, kind="events")
+
+    # Removed the sales from tokens that the user has minted
+    collection_sales = []
+
+    for sale in sales:
+        if not ((sale["fa2_address"] in minted_tokens) and (sale["token_id"] in minted_tokens[sale["fa2_address"]])):
+            collection_sales.append(sale)
 
     return {sale["ophash"]: sale for sale in collection_sales}
 
@@ -1061,8 +1157,9 @@ def fix_missing_token_information(tokens, token_transfers, kind):
         return token_name, token_id, token_editions, token_address
 
     # Obtain any missing token information
-    tokens[["token_name", "token_id", "token_editions", "token_address"]] = tokens.apply(
-        get_token_information, axis=1, result_type="expand")
+    if tokens.size > 0:
+        tokens[["token_name", "token_id", "token_editions", "token_address"]] = tokens.apply(
+            get_token_information, axis=1, result_type="expand")
 
     return tokens
 
@@ -1102,9 +1199,18 @@ def get_minted_tokens(operations, token_transfers):
     # Try to fix any missing token information using the user token transfers
     minted_tokens = fix_missing_token_information(minted_tokens, token_transfers, kind="mint")
 
+    # Set any token transfer associated with the minted tokens as used
+    for _, token in minted_tokens.iterrows():
+        cond = (token_transfers["token_id"] == token["token_id"]) & (
+            token_transfers["token_address"] == token["token_address"])
+        token_transfers.loc[cond, "used"] = True
+
     # Add a column with the token links
-    minted_tokens["token_link"] = minted_tokens.apply(
-        lambda t: get_token_link(t["token_name"], t["token_id"], t["token_address"]), axis=1)
+    if minted_tokens.size > 0:
+        minted_tokens["token_link"] = minted_tokens.apply(
+            lambda t: get_token_link(t["token_name"], t["token_id"], t["token_address"]), axis=1)
+    else:
+        minted_tokens["token_link"] = []
 
     # Reorder the columns
     columns = [
@@ -1114,8 +1220,9 @@ def get_minted_tokens(operations, token_transfers):
     return minted_tokens[columns].copy()
 
 
-def split_multiple_collects(collected_tokens):
-    """Splits multiple collect operations in several single collect operations.
+def split_multiple_collects_with_missing_token_id(collected_tokens):
+    """Splits multiple collect operations with missing token id information
+    into several single collect operations.
 
     Parameters
     ----------
@@ -1128,8 +1235,9 @@ def split_multiple_collects(collected_tokens):
         A pandas data frame with the splitted multiple collect operations.
 
     """
-    # Get the multiple edition collects
-    cond = ~collected_tokens["token_editions"].isin(["", "1"]) & (
+    # Get the multiple edition collects with missing token ids
+    cond = (collected_tokens["token_id"] == "") & (
+        ~collected_tokens["token_editions"].isin(["", "1"])) & (
         ~collected_tokens["token_name"].isin(["hDAO", "MATH", "Materia", "TezDAO", "akaDAO", "wUSDC"]))
     multiple_edition_collects = collected_tokens[cond]
 
@@ -1237,8 +1345,8 @@ def get_collected_tokens(operations, token_transfers):
     collected_tokens = fix_missing_token_information(collected_tokens, token_transfers, kind="mint")
     collected_tokens = fix_missing_token_information(collected_tokens, token_transfers, kind="receive")
 
-    # Split multiple collects into single collects
-    collected_tokens = split_multiple_collects(collected_tokens)
+    # Split multiple collects with missing token id information into single collects
+    collected_tokens = split_multiple_collects_with_missing_token_id(collected_tokens)
 
     # Try to fix the missing token ids from some of the minted tokens
     collected_tokens = fix_token_ids_from_mints(collected_tokens, token_transfers)
@@ -1251,8 +1359,11 @@ def get_collected_tokens(operations, token_transfers):
     collected_tokens["buy_price_usd"] = collected_tokens["buy_price"] * collected_tokens["tez_to_usd"]
 
     # Add a column with the token links
-    collected_tokens["token_link"] = collected_tokens.apply(
-        lambda t: get_token_link(t["token_name"], t["token_id"], t["token_address"]), axis=1)
+    if collected_tokens.size > 0:
+        collected_tokens["token_link"] = collected_tokens.apply(
+            lambda t: get_token_link(t["token_name"], t["token_id"], t["token_address"]), axis=1)
+    else:
+        collected_tokens["token_link"] = []
 
     # Reorder the columns
     columns = [
@@ -1376,8 +1487,11 @@ def get_sold_tokens(operations, token_transfers):
     sold_tokens["sell_price_usd"] = sold_tokens["sell_price"] * sold_tokens["tez_to_usd"]
 
     # Add a column with the token links
-    sold_tokens["token_link"] = sold_tokens.apply(
-        lambda t: get_token_link(t["token_name"], t["token_id"], t["token_address"]), axis=1)
+    if sold_tokens.size > 0:
+        sold_tokens["token_link"] = sold_tokens.apply(
+            lambda t: get_token_link(t["token_name"], t["token_id"], t["token_address"]), axis=1)
+    else:
+        sold_tokens["token_link"] = []
 
     # Reorder the columns
     columns = [
@@ -1388,7 +1502,7 @@ def get_sold_tokens(operations, token_transfers):
     return sold_tokens[columns].copy()
 
 
-def get_transferred_tokens(operations, token_transfers, minted_tokens):
+def get_transferred_tokens(operations, token_transfers):
     """Returns the list of tokens transferred by the user to other users.
 
     Parameters
@@ -1397,8 +1511,6 @@ def get_transferred_tokens(operations, token_transfers, minted_tokens):
         The pandas data frame with the user operations.
     token_transfers: object
         The pandas data frame with the user token transfers.
-    minted_tokens: object
-        The pandas data frame with the user minted tokens.
 
     Returns
     -------
@@ -1415,14 +1527,6 @@ def get_transferred_tokens(operations, token_transfers, minted_tokens):
 
         # User transfers can only be send transfers
         if not token_transfer["send"]:
-            return False
-
-        # Check if the token is in the list of minted tokens
-        cond = (
-            minted_tokens["token_id"] == token_transfer["token_id"]) & (
-            minted_tokens["token_address"] == token_transfer["token_address"])
-
-        if cond.sum() > 0:
             return False
 
         # Check if there is a transfer operation sent by the user with the same
@@ -1453,7 +1557,8 @@ def get_transferred_tokens(operations, token_transfers, minted_tokens):
 
 
 def get_incoming_tokens(collected_tokens, dropped_tokens):
-    """Returns the list of user incoming tokens.
+    """Returns the list of tokens that were transferred to the user wallet for
+    different reasons.
 
     Parameters
     ----------
@@ -1484,8 +1589,7 @@ def get_incoming_tokens(collected_tokens, dropped_tokens):
     dropped_tokens["buy_price_euros"] = 0.0
     dropped_tokens["buy_price_usd"] = 0.0
 
-    # Remove any entry in the collected and dropped tokens that is missing the
-    # token id or the token address information
+    # Remove any entry that is missing the token id or address information
     cond = (collected_tokens["token_id"] != "") & (collected_tokens["token_address"] != "")
     collected_tokens = collected_tokens[cond]
     cond = (dropped_tokens["token_id"] != "") & (dropped_tokens["token_address"] != "")
@@ -1509,7 +1613,8 @@ def get_incoming_tokens(collected_tokens, dropped_tokens):
 
 
 def get_outgoing_tokens(sold_tokens, transferred_tokens):
-    """Returns the list of user outgoing tokens.
+    """Returns the list of tokens that were moved from the user wallet for
+    different reasons.
 
     Parameters
     ----------
@@ -1564,6 +1669,8 @@ def get_outgoing_tokens(sold_tokens, transferred_tokens):
 def get_token_trades(collected_tokens, dropped_tokens, sold_tokens, transferred_tokens, hold_period):
     """Returns the list of tokens trades done by the user.
 
+    This method uses a FIFO (first in, first out) approach.
+
     Parameters
     ----------
     collected_tokens: object
@@ -1600,6 +1707,7 @@ def get_token_trades(collected_tokens, dropped_tokens, sold_tokens, transferred_
     taxed_gain_euros = np.full(n_trades, 0.0)
     taxed_gain_usd = np.full(n_trades, 0.0)
 
+    # Loop over the outgoing tokens and calculate any possible trade gain
     for i, token in outgoing_tokens.iterrows():
         # Get the sell information
         sell_timestamp = token["sell_timestamp"]
@@ -1609,14 +1717,14 @@ def get_token_trades(collected_tokens, dropped_tokens, sold_tokens, transferred_
         sell_price_per_edition_usd = token["sell_price_usd"] / sell_editions
 
         # Check if the token is owed by the user at that time
-        cond = (incoming_tokens["token_id"] == token["token_id"]) & (
-            incoming_tokens["token_editions"] > 0) & (
+        cond = (incoming_tokens["buy_timestamp"] <= sell_timestamp) & (
+            incoming_tokens["token_id"] == token["token_id"]) & (
             incoming_tokens["token_address"] == token["token_address"]) & (
-            incoming_tokens["buy_timestamp"] <= sell_timestamp)
+            incoming_tokens["token_editions"] > 0)
 
         if cond.sum() > 0:
             # Loop over the owned editions and calculate the combined buy price
-            indices = incoming_tokens.index[cond].to_numpy()
+            indices = incoming_tokens.index[cond]
 
             for index in indices:
                 # Get the buy information
@@ -1625,7 +1733,7 @@ def get_token_trades(collected_tokens, dropped_tokens, sold_tokens, transferred_
                 buy_price_per_edition_euros = incoming_tokens.loc[index, "buy_price_euros"] / buy_editions
                 buy_price_per_edition_usd = incoming_tokens.loc[index, "buy_price_usd"] / buy_editions
 
-                # Calculate the traded gains
+                # Calculate the trade gains
                 traded_editions = min(sell_editions, buy_editions)
                 buy_timestamp[i] = incoming_tokens.loc[index, "buy_timestamp"]
                 buy_price[i] += traded_editions * buy_price_per_edition
@@ -1641,11 +1749,11 @@ def get_token_trades(collected_tokens, dropped_tokens, sold_tokens, transferred_
                     taxed_gain_euros[i] += traded_editions * (sell_price_per_edition_euros - buy_price_per_edition_euros)
                     taxed_gain_usd[i] += traded_editions * (sell_price_per_edition_usd - buy_price_per_edition_usd)
 
-                # Update the incoming tokens information
+                # Update the incoming token information
                 incoming_tokens.loc[index, "token_editions"] -= traded_editions
                 incoming_tokens.loc[index, "buy_price"] -= traded_editions * buy_price_per_edition
-                incoming_tokens.loc[index, "buy_price_euros"] -= traded_editions * buy_price_per_edition
-                incoming_tokens.loc[index, "buy_price_usd"] -= traded_editions * buy_price_per_edition
+                incoming_tokens.loc[index, "buy_price_euros"] -= traded_editions * buy_price_per_edition_euros
+                incoming_tokens.loc[index, "buy_price_usd"] -= traded_editions * buy_price_per_edition_usd
 
                 # Update the sell editions
                 sell_editions -= traded_editions
@@ -1665,7 +1773,7 @@ def get_token_trades(collected_tokens, dropped_tokens, sold_tokens, transferred_
             taxed_gain_euros[i] += sell_editions * sell_price_per_edition_euros
             taxed_gain_usd[i] += sell_editions * sell_price_per_edition_usd
 
-    # Build the token trades data frame from the sold tokens data frame
+    # Build the token trades data frame from the outgoing tokens data frame
     token_trades = outgoing_tokens.copy()
     token_trades["buy_timestamp"] = buy_timestamp
     token_trades["buy_price"] = buy_price
@@ -1677,7 +1785,10 @@ def get_token_trades(collected_tokens, dropped_tokens, sold_tokens, transferred_
     token_trades["taxed_gain"] = taxed_gain
     token_trades["taxed_gain_euros"] = taxed_gain_euros
     token_trades["taxed_gain_usd"] = taxed_gain_usd
+
+    # Select only trades associated with sold tokens
     token_trades = token_trades[token_trades["sold"]]
+    token_trades = token_trades.reset_index(drop=True)
 
     # Reorder the columns
     columns = [
@@ -1692,7 +1803,7 @@ def get_token_trades(collected_tokens, dropped_tokens, sold_tokens, transferred_
 
 def get_tez_exchange_gains(operations, hold_period):
     """Returns the gains associated to the exchange of tez to fiat.
-    
+
     This method uses a FIFO (first in, first out) approach.
 
     Parameters
@@ -1709,34 +1820,29 @@ def get_tez_exchange_gains(operations, hold_period):
 
     """
     # Get the necessary numpy arrays
+    n_operations = len(operations)
     timestamp = operations["timestamp"].to_numpy().copy()
     received_amount = operations["received_amount"].to_numpy().copy()
-    spent_amount = operations["spent_amount"].to_numpy().copy()
-    offer_amount = operations["active_offer_amount"].to_numpy().copy()
-    fees_amount = operations["spent_fees"].to_numpy().copy()
     tez_to_euros = operations["tez_to_euros"].to_numpy().copy()
     tez_to_usd = operations["tez_to_usd"].to_numpy().copy()
-    is_collect = (operations["collect_amount"] > 0).to_numpy().copy()
-    is_sell_tez = (operations["sell_tez_amount"] > 0).to_numpy().copy()
-    gain_euros = np.full(len(spent_amount), 0.0)
-    gain_usd = np.full(len(spent_amount), 0.0)
-    taxed_gain_euros = np.full(len(spent_amount), 0.0)
-    taxed_gain_usd = np.full(len(spent_amount), 0.0)
+    gain_euros = np.full(n_operations, 0.0)
+    gain_usd = np.full(n_operations, 0.0)
+    taxed_gain_euros = np.full(n_operations, 0.0)
+    taxed_gain_usd = np.full(n_operations, 0.0)
 
     # Calculate the tez exchange gains
     counter = 0
 
-    for i in range(len(spent_amount)):
+    for i, operation in operations.iterrows():
         # Process the fees_amount as a normal expense with no gains
-        while fees_amount[i] > 0:
-            # Calculate the amount to subtract
-            subtract_amount = fees_amount[i]
+        fees_amount = operation["spent_fees"]
 
-            if subtract_amount > received_amount[counter]:
-                subtract_amount = received_amount[counter]
+        while fees_amount > 0:
+            # Calculate the amount to subtract
+            subtract_amount = min(fees_amount, received_amount[counter])
 
             # Subtract the amount
-            fees_amount[i] -= subtract_amount
+            fees_amount -= subtract_amount
             received_amount[counter] -= subtract_amount
 
             # Check if all the tez from the "first in" operation have been used
@@ -1744,15 +1850,14 @@ def get_tez_exchange_gains(operations, hold_period):
                 counter += 1
 
         # Process the active offers as a normal expense with no gains
-        while offer_amount[i] > 0:
-            # Calculate the amount to subtract
-            subtract_amount = offer_amount[i]
+        offer_amount = operation["active_offer_amount"]
 
-            if subtract_amount > received_amount[counter]:
-                subtract_amount = received_amount[counter]
+        while offer_amount > 0:
+            # Calculate the amount to subtract
+            subtract_amount = min(offer_amount, received_amount[counter])
 
             # Subtract the amount
-            offer_amount[i] -= subtract_amount
+            offer_amount -= subtract_amount
             received_amount[counter] -= subtract_amount
 
             # Check if all the tez from the "first in" operation have been used
@@ -1760,29 +1865,26 @@ def get_tez_exchange_gains(operations, hold_period):
                 counter += 1
 
         # Process the spent_amount tez amount
-        while spent_amount[i] > 0:
-            # Calculate the amount to subtract
-            subtract_amount = spent_amount[i]
+        spent_amount = operation["spent_amount"]
 
-            if subtract_amount > received_amount[counter]:
-                subtract_amount = received_amount[counter]
+        while spent_amount > 0:
+            # Calculate the amount to subtract
+            subtract_amount = min(spent_amount, received_amount[counter])
 
             # Subtract the amount
-            spent_amount[i] -= subtract_amount
+            spent_amount -= subtract_amount
             received_amount[counter] -= subtract_amount
 
-            # Check if it is a collect or tez sell operation
-            if is_collect[i] or is_sell_tez[i]:
+            # Check if it is a collect or sell tez operation
+            if (operation["collect_amount"] > 0) or (operation["sell_tez_amount"] > 0):
                 # Calculate the gains from the tez exchanges
-                new_gain_euros = subtract_amount * (tez_to_euros[i] - tez_to_euros[counter])
-                new_gain_usd = subtract_amount * (tez_to_usd[i] - tez_to_usd[counter])
-                gain_euros[i] += new_gain_euros
-                gain_usd[i] += new_gain_usd
+                gain_euros[i] += subtract_amount * (operation["tez_to_euros"] - tez_to_euros[counter])
+                gain_usd[i] += subtract_amount * (operation["tez_to_usd"] - tez_to_usd[counter])
 
                 # Check if the gains are taxable
-                if (timestamp[i] - timestamp[counter]).days <= hold_period:
-                    taxed_gain_euros[i] += new_gain_euros
-                    taxed_gain_usd[i] += new_gain_usd
+                if (operation["timestamp"] - timestamp[counter]).days <= hold_period:
+                    taxed_gain_euros[i] += subtract_amount * (operation["tez_to_euros"] - tez_to_euros[counter])
+                    taxed_gain_usd[i] += subtract_amount * (operation["tez_to_usd"] - tez_to_usd[counter])
 
             # Check if all the tez from the "first in" operation have been used
             if received_amount[counter] == 0:

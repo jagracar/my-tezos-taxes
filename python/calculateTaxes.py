@@ -13,7 +13,7 @@ user_first_wallet = list(user_wallets.keys())[0]
 file_name = "operations_%s.csv" % user_first_wallet
 operations = pd.read_csv(os.path.join(data_directory, "output", file_name), parse_dates=["timestamp"], keep_default_na=False)
 
-# Load the csv files containing all the token details
+# Load the csv files containing all the user token details
 file_name = "minted_tokens_%s.csv" % user_first_wallet
 minted_tokens = pd.read_csv(os.path.join(data_directory, "output", file_name), parse_dates=["timestamp"], keep_default_na=False)
 
@@ -117,17 +117,27 @@ print("   %.2f tez (%.2f %s) were spent in other uses." % (
     operations["spent_amount_others"].sum(), (operations["spent_amount_others"] * tez_to_fiat).sum(), fiat_coin))
 
 print("\n NFT operations associated to the user wallets:\n")
-print("   Minted %i tokens." % (minted_tokens["token_id"] + minted_tokens["token_address"]).unique().size)
-print("   Collected %i tokens from other artists." % (collected_tokens["token_id"] + collected_tokens["token_address"]).unique().size)
-print("   Received %i tokens as free drops." % (dropped_tokens["token_id"] + dropped_tokens["token_address"]).unique().size)
-print("   Sold %i tokens collected from other artists." % (sold_tokens["token_id"] + sold_tokens["token_address"]).unique().size)
-print("   Transferred %i tokens to other users." % (transferred_tokens["token_id"] + transferred_tokens["token_address"]).unique().size)
+
+if minted_tokens.size > 0:
+    print("   Minted %i tokens." % (minted_tokens["token_id"] + minted_tokens["token_address"]).unique().size)
+
+if collected_tokens.size > 0:
+    print("   Collected %i tokens from other artists." % (collected_tokens["token_id"] + collected_tokens["token_address"]).unique().size)
+
+if dropped_tokens.size > 0:
+    print("   Received %i tokens as free drops." % (dropped_tokens["token_id"] + dropped_tokens["token_address"]).unique().size)
+
+if sold_tokens.size > 0:
+    print("   Sold %i tokens collected from other artists." % (sold_tokens["token_id"] + sold_tokens["token_address"]).unique().size)
+
+if transferred_tokens.size > 0:
+    print("   Burned or transferred to other users %i tokens." % (transferred_tokens["token_id"] + transferred_tokens["token_address"]).unique().size)
 
 print("\n Taxable gains:\n")
 print("   %.2f tez (%.2f %s) from sales of the user minted art." % (
     operations["art_sale_amount"].sum(), (operations["art_sale_amount"] * tez_to_fiat).sum(), fiat_coin))
 
-if token_trades["taxed_gain"].sum() > 0:
+if token_trades_gain_fiat.sum() > 0:
     print("   %.2f tez (%.2f %s) from trades of NFTs minted by other artists." % (
         token_trades["taxed_gain"].sum(), token_trades_gain_fiat.sum(), fiat_coin))
 
@@ -148,7 +158,7 @@ if operations["donation_amount"].sum() > 0:
     print("   %.2f tez (%.2f %s) from donations." % (
         operations["donation_amount"].sum(), (operations["donation_amount"] * tez_to_fiat).sum(), fiat_coin))
 
-if token_trades["gain"].sum() < 0:
+if token_trades_gain_fiat.sum() < 0:
     print("   %.2f tez (%.2f %s) from trades of NFTs minted by other artists." % (
         abs(token_trades["gain"].sum()), abs(token_trades_gain_fiat.sum()), fiat_coin))
 
@@ -156,4 +166,5 @@ if tez_exchange_gain_fiat.sum() < 0:
     print("   %.2f %s from tez exchange losses associated to tez exchange operations (using the FIFO method)." % (
         abs(tez_exchange_gain_fiat.sum()), fiat_coin))
 
-print("")
+print("\n You can find the token trades information in %s\n" % os.path.join(data_directory, "output", token_trades_file_name))
+
