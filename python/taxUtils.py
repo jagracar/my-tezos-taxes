@@ -632,6 +632,17 @@ def get_user_minted_tokens(user_wallets):
     """ % '","'.join(user_wallets)
     tokens = get_teztok_query_result({"query": query}, kind="tokens")
 
+    # Check also by the artist address
+    query = """
+        query UserMintedRaribleTokens {
+            tokens(where: {artist_address: {_in: ["%s"]}}, order_by: {minted_at: asc}, limit: **LIMIT**, offset: **OFFSET**) {
+                token_id
+                fa2_address
+            }
+        }
+    """ % '","'.join(user_wallets)
+    tokens += get_teztok_query_result({"query": query}, kind="tokens")
+
     # Add the tokens minted in rarible
     query = """
         query UserMintedRaribleTokens {
@@ -1603,8 +1614,8 @@ def get_incoming_tokens(collected_tokens, dropped_tokens):
     # Assume one edition in entries missing the token editions information
     incoming_tokens.loc[incoming_tokens["token_editions"] == "", "token_editions"] = "1"
 
-    # Change the token editions column type to int
-    incoming_tokens["token_editions"] = incoming_tokens["token_editions"].astype(int)
+    # Change the token editions column type to float
+    incoming_tokens["token_editions"] = incoming_tokens["token_editions"].astype(float)
 
     # Rename the time stamp column
     incoming_tokens = incoming_tokens.rename(columns={"timestamp": "buy_timestamp"})
@@ -1657,8 +1668,8 @@ def get_outgoing_tokens(sold_tokens, transferred_tokens):
     # Assume one edition in entries missing the token editions information
     outgoing_tokens.loc[outgoing_tokens["token_editions"] == "", "token_editions"] = "1"
 
-    # Change the token editions column type to int
-    outgoing_tokens["token_editions"] = outgoing_tokens["token_editions"].astype(int)
+    # Change the token editions column type to float
+    outgoing_tokens["token_editions"] = outgoing_tokens["token_editions"].astype(float)
 
     # Rename the time stamp column
     outgoing_tokens = outgoing_tokens.rename(columns={"timestamp": "sell_timestamp"})
