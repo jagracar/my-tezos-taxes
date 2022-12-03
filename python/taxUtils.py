@@ -1614,8 +1614,8 @@ def get_incoming_tokens(collected_tokens, dropped_tokens):
     # Assume one edition in entries missing the token editions information
     incoming_tokens.loc[incoming_tokens["token_editions"] == "", "token_editions"] = "1"
 
-    # Change the token editions column type to float
-    incoming_tokens["token_editions"] = incoming_tokens["token_editions"].astype(float)
+    # Change the token editions column type to int (works for very large integers)
+    incoming_tokens["token_editions"] = np.array([int(value) for value in incoming_tokens["token_editions"]])
 
     # Rename the time stamp column
     incoming_tokens = incoming_tokens.rename(columns={"timestamp": "buy_timestamp"})
@@ -1668,8 +1668,8 @@ def get_outgoing_tokens(sold_tokens, transferred_tokens):
     # Assume one edition in entries missing the token editions information
     outgoing_tokens.loc[outgoing_tokens["token_editions"] == "", "token_editions"] = "1"
 
-    # Change the token editions column type to float
-    outgoing_tokens["token_editions"] = outgoing_tokens["token_editions"].astype(float)
+    # Change the token editions column type to int (works for very large integers)
+    outgoing_tokens["token_editions"] = np.array([int(value) for value in outgoing_tokens["token_editions"]])
 
     # Rename the time stamp column
     outgoing_tokens = outgoing_tokens.rename(columns={"timestamp": "sell_timestamp"})
