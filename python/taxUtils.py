@@ -48,6 +48,9 @@ TOKENS = {
     "uUSD": "KT1XRPEPXbZK25r3Htzp2o1x7xdMMmfocKNW"
 }
 
+# The main tezos FA2 token names
+TOKEN_NAMES = {value: key for key, value in TOKENS.items()}
+
 # The main tezos tokens mint prices in tez
 TOKENS_MINT_PRICE = {
     TOKENS["Tezzardz"]: 15,

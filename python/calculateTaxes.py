@@ -41,8 +41,8 @@ tax_parameters = read_json_file(os.path.join(data_directory, "input", "tax_param
 start_date = pd.to_datetime(tax_parameters["start_date"])
 end_date = pd.to_datetime(tax_parameters["end_date"])
 hold_period = 365 * tax_parameters["hold_period_in_years"]
-fiat_coin = "euros" if tax_parameters["fiat_coin"] == "eur" else "USD"
 language = tax_parameters["language"]
+fiat_coin = ("euros" if language == "english" else "Euro") if tax_parameters["fiat_coin"] == "eur" else "USD"
 
 # Get the token trades information
 token_trades = get_token_trades(collected_tokens, dropped_tokens, sold_tokens, transferred_tokens, hold_period)
@@ -73,7 +73,7 @@ cond = (tez_exhange_gains["timestamp"] >= start_date) & (tez_exhange_gains["time
 tez_exhange_gains = tez_exhange_gains[cond]
 
 # Use the correct fiat columns
-if fiat_coin == "euros":
+if fiat_coin in ["euros", "Euro"]:
     tez_to_fiat = operations["tez_to_euros"]
     token_trades_gain_fiat = token_trades["taxed_gain_euros"]
     tez_exchange_gain_fiat = tez_exhange_gains["taxed_gain_euros"]
