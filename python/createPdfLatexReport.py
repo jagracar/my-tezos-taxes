@@ -36,6 +36,11 @@ token_trades = token_trades[cond]
 cond = (tez_exhange_gains["timestamp"] >= start_date) & (tez_exhange_gains["timestamp"] <= end_date)
 tez_exhange_gains = tez_exhange_gains[cond]
 
+# Reset the indexes
+operations = operations.reset_index(drop=True)
+token_trades = token_trades.reset_index(drop=True)
+tez_exhange_gains = tez_exhange_gains.reset_index(drop=True)
+
 # Use the correct fiat columns
 if fiat_coin in ["euros", "Euro"]:
     tez_to_fiat = "tez_to_euros"
