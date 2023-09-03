@@ -17,7 +17,7 @@ operations = pd.read_csv(os.path.join(data_directory, "output", file_name), pars
 file_name = "token_transfers_%s.csv" % user_first_wallet
 token_transfers = pd.read_csv(os.path.join(data_directory, "output", file_name), parse_dates=["timestamp"], keep_default_na=False)
 
-# Change the token editions column type to str
+# Change the token id and token editions columns type to str
 token_transfers["token_id"] = token_transfers["token_id"].astype(str)
 token_transfers["token_editions"] = token_transfers["token_editions"].astype(str)
 

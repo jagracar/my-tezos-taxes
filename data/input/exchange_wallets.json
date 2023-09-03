@@ -1,5 +1,8 @@
 {
-    "tz1TmBz5CkiMrrcpxATTg1nDtd1CUoBd17DC": "Coinbase",
+	"tz2WDATNYnp7FdsmuZDYSidioZqeoLNZqXvE": "Binance withdrawal",
+	"tz1dPMpQ4zEgdngrPbwywAowzfbandTQ1dDK": "Bittrex",
+	"tz1URN14dqj3mRJUEpPzddYHSr84zSgWJ1GG": "BitVavo",
+	"tz1TmBz5CkiMrrcpxATTg1nDtd1CUoBd17DC": "Coinbase",
 	"tz1NcoDFXMAfB26mpBhVrdSHmppyTeccT6Fi": "Coinbase 1",
 	"tz1Z7eWGw18LqUgRqmDqNZFQx7f8GEHXRfT8": "Coinbase 2",
 	"tz1bDhCGNZLQw1QXgf6MCzo6EtAVSGkqEB11": "Coinbase 3",
@@ -7,10 +10,12 @@
 	"tz1gNjyzyT8L6WgNS4AdNMppsSFw76J4aDvT": "Coinbase Delegator aDvT",
 	"tz1Vs2z88hHRnFLss81M7dXHnbwhZNMDrSgD": "Coinbase Delegator rSgD",
 	"tz1LnHsA2wpn7guf8b7xzX2i5zNKRQoRQVgJ": "Coinbase Delegator RQVgJ",
-	"tz1URN14dqj3mRJUEpPzddYHSr84zSgWJ1GG": "BitVavo",
+	"tz1e4N6UZzrjoxKbsJoLnxuBy6DfZu4voiTV": "Coinbase Delegator oiTV",
 	"tz1bDXD6nNSrebqmAnnKKwnX1QdePSMCj4MX": "Kraken 1",
 	"tz1NH4A2kRyFQUYhyi9aL8jrrySQUrCgNsX9": "Kraken 2",
-    "tz1YpWsMwc4gSyjtxEF3JbmN6YrGiDidaSmg": "Kraken 3",
-    "tz1cgJLxcS8ZTgq5dXPtojJJR7Bp8fKDyxPK": "Kraken 4",
-    "tz1e9ZH87proooFwLidjvE8fhusWfeDf3bgk": "Kraken 5"
+	"tz1YpWsMwc4gSyjtxEF3JbmN6YrGiDidaSmg": "Kraken 3",
+	"tz1cgJLxcS8ZTgq5dXPtojJJR7Bp8fKDyxPK": "Kraken 4",
+	"tz1e9ZH87proooFwLidjvE8fhusWfeDf3bgk": "Kraken 5",
+	"tz1Q7RpsRvbozbY5zuhv5AaXuoqeXrcFAtgF": "Kucoin",
+	"tz1VeaJWkdr2m5YaKFgeAafenhHhDcMxWfHC": "OKEx Delegator"
 }

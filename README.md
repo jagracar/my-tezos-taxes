@@ -26,8 +26,8 @@ Run the scripts using python3 (order is important):
 ```bash
 cd my-tezos-taxes/python
 python3 historicalTezBalance.py
-python3 walletOperations.py
 python3 tokenTransfers.py
+python3 walletOperations.py
 python3 tokenDetails.py
 python3 calculateTaxes.py
 python3 createPdfLatexReport.py

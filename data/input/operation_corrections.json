@@ -42,6 +42,12 @@
 		"kind": "tezos community reward",
 		"prize": true
 	},
+    "onq7aCrRgowoV9Se5r5bMhkgBCgpfY9iP7yofEWSxzPyCmg2H1K": {
+        "comment": "Tezos community reward",
+        "link": "https://news.tezoscommons.org/tezos-community-rewards-june-2023-46710f7d90ca",
+        "kind": "tezos community reward",
+        "prize": true
+    },
 	"oojygYfafCReCRib8qhKiYoSadXQurXLv6LygLjNuuhs33Ec58p": {
 		"comment": "Donation to the Processing Foundation",
 		"kind": "Donation to the Processing Foundation",
@@ -76,5 +82,21 @@
 	},
 	"onubK8MdwExxD4YMZWUQnCe42yg8nWi9hGxagKUPL2NKb9S8iew": {
 		"comment": "mattdesl game: receive tez"
-	}
+	},
+    "ooeuU4RTZiJ5ir29V4BUx23FNH9yc2GuFYubKZtVrsUNiGdoy4U": {
+        "comment": "Buy Zancan print",
+        "link": "https://zancan.art/Prints",
+        "kind": "Buy Zancan print",
+        "collect": true,
+        "token_id": "27101",
+        "token_editions": 1,
+        "token_address": "KT1LjmAdYQCLBjwv4S2oFkEzyHVkomAf5MrW"
+    },
+    "oovVZPQSk2GRvS9uUd1TKcQKBakwteh7mA1pkXHD6G2MAcNH7cJ": {
+        "comment": "Collect Marina Abramović - The Hero 25FPS",
+        "kind": "Collect Marina Abramović - The Hero 25FPS",
+        "token_id": "1658769701717420500",
+        "token_editions": 1,
+        "token_address": "KT1Do66uucsbGELYV1sbLwBttCc5Gu6NrKmo"
+    }
 }

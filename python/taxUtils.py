@@ -9,6 +9,8 @@ pd.options.display.max_colwidth = 80
 # The main tezos FA2 tokens
 TOKENS = {
     "OBJKT": "KT1RJ6PbjHpwc3M5rw5s2Nbmefwbuwbdxton",
+    "TEIA": "KT1QrtA753MSv8VGxkDrKKyJniG5JtuHHbtV",
+    "testTEIA": "KT1ShNzDss6NcZaxpGeZEneBb8qFB8kpR9n3",
     "Tezzardz": "KT1LHHLso8zQWQWg1HUukajdxxbkGfNoHjh6",
     "GOGOs": "KT1SyPgtiXTaEfBuMZKviWGNHqVrBBEjvtfQ",
     "GOGOs Inventory Item": "KT1Xf44LpwrA7oBcB3VwWTtUBP1eNRaNnWeh",
@@ -18,8 +20,12 @@ TOKENS = {
     "VesselsGen0": "KT1BfKnSKV6Wx45Cv4yjEYXViwuhmswby8Hp",
     "GENTK v1": "KT1KEa8z6vWXDJrVqtMrAeDVzsvxat3kHaCE",
     "GENTK v2": "KT1U6EHmNxJTkvaWJ4ThczG4FSDaHC21ssvi",
+    "GENTK v3": "KT1EfsNuqwLAWDd3o4pvfUx1CAh5GMdTrRvr",
+    "fx(text)": "KT1GtbuswcNMGhHF2TSuH1Yfaqn16do8Qtva",
+    "FXHASH ticket": "KT19etLCjCCzTLFFAxsxLFsVYMRPetr2bTD5",
     "ITEM": "KT1LjmAdYQCLBjwv4S2oFkEzyHVkomAf5MrW",
     "tz1and Place": "KT1G6bH9NVDp8tSSz7FzDUnCgbJwQikxtUog",
+    "tz1and Place v2": "KT1AxxoqSJ8BfjCMZ3iQxAJXj1nabZWx9xkb",
     "tz1and Item": "KT1TKFWDiMk35c5n94TMmLaYksdXkHuaL112",
     "8bidou 8x8 token": "KT1MxDwChiDwd6WBVs24g1NjERUoK622ZEFp",
     "8bidou 24x24 token": "KT1TR1ErEQPTdtaJ7hbvKTJSa1tsGnHGZTpf",
@@ -44,8 +50,16 @@ TOKENS = {
     "Rarible token": "KT18pVpRXKPY2c4U2yFEGSH3ZnhB2kL8kwXS",
     "Les Elefants Terribles token": "KT19BLv8px4VMLduVnYgahqFbsJ19FJXamUG",
     "The Moments token": "KT1CNHwTyjFrKnCstRoMftyFVwoNzF6Xxhpy",
+    "0x5E1F1E Mint Access Token": "KT1LMrt6NKe86GUeCxHXjXkf5UD4e5uUTSkP",
+    "0x5E1F1E": "KT1XNZ7XosuzasVkZBRAptEQ6R5knMBrFUsj",
+    "The Oracles token": "KT1MhSRKsujc4q5b5KsXvmsvkFyht9h4meZs",
+    "McLaren F1 collectible": "KT1BRADdqGk2eLmMqvyWzqVmPQ1RCBCbW5dY",
+    "Tezos Community token": "KT1VeeSjhKRjr6qbFiGWjiuHXTxbfMqHiZR8",
     "wUSDC": "KT18fp5rcTW7mbWDmzFwjLDUhs5MeJmagDSZ",
-    "uUSD": "KT1XRPEPXbZK25r3Htzp2o1x7xdMMmfocKNW"
+    "uUSD": "KT1XRPEPXbZK25r3Htzp2o1x7xdMMmfocKNW",
+    "TRASH": "KT1ShjB24tTXX8m5oDCrBHXqynCpmNJDxpD5",
+    "spam token 1": "KT1AShwxNxqEha1PeaVdh7zRuzeneFzHmjJs",
+    "spam token 2": "KT18j785rB3G4wXxEpqwwG2hJ2iZrjLAbeo7"
 }
 
 # The main tezos FA2 token names
@@ -74,6 +88,9 @@ SMART_CONTRACTS = {
     "FXHASH minter v1": "KT1AEVuykWeuuFX7QkEAMNtffzwhe1Z98hJS",
     "FXHASH minter v2": "KT1XCoGnfupWk7Sp8536EfrxcP73LmT68Nyr",
     "FXHASH minter v3": "KT1BJC12dG17CVvPKJ1VYaNnaT5mzfnUTwXv",
+    "FXHASH minter v4": "KT1Xpmp15KfqoePNW9HczFmqaGNHwadV2a3b",
+    "FXHASH fx(text) minter v1": "KT1GtbuswcNMGhHF2TSuH1Yfaqn16do8Qtva",
+    "FXHASH tickets minter": "KT19etLCjCCzTLFFAxsxLFsVYMRPetr2bTD5",
     "typed minter": "KT1CK9RnWZGnejBeT6gJfgvf4p7f1NwhP9wS",
     "25FPS minter": "KT1Q2jUJnrvrrhi4gBpZVLm37nyCqaFNtK7X",
     # Marketplaces
@@ -94,6 +111,7 @@ SMART_CONTRACTS = {
     "objkt.com Minting Factory": "KT1Aq4wWmVanpQhq4TTfjZXB5AjFpx15iQMM",
     "FXHASH marketplace v1": "KT1Xo5B7PNBAeynZPmca4bRh6LQow4og1Zb9",
     "FXHASH marketplace v2": "KT1GbyoDi7H1sfXmimXpptZJuCdHMh66WS9u",
+    "FXHASH marketplace v3": "KT1M1NyU9X4usEimt2f3kDaijZnDMNBu42Ja",
     "versum marketplace": "KT1GyRAJNdizF1nojQz62uGYkx8WFRUJm9X5",
     "rarible marketplace v2": "KT198mqFKkiWerXLmMCw69YB1i6yzYtmGVrC",
     "8bidou marketplace I": "KT1BvWGFENd4CXW5F3u4n31xKfJhmBGipoqF",
@@ -106,6 +124,11 @@ SMART_CONTRACTS = {
     "akaMetaverse marketplace v2.1": "KT1Dn3sambs7KZGW88hH2obZeSzfmCmGvpFo",
     "8scribo marketplace": "KT19vw7kh7dzTRxFUZNWu39773baauzNWtzj",
     "Barter marketplace": "KT1XtJ6k51y7HpLFLTNv2wBYFhfVMZ6ow3Sz",
+    "EmProps marketplace": "KT1AML4jv2jMLKESGTApRZVoga5V5cSAMD2E",
+    "Tezos Domains marketplace offers": "KT1Evxe1udtPDGWrkiRsEN3vMDdB6gNpkMPM",
+    "Tezos Domains marketplace bids": "KT1CaSP4dn8wasbMsfdtGiCPgYFW7bvnPRRT",
+    "Tezos Domains marketplace cancel bids": "KT1CfuAbJQbAGYcjKfvEvbtNUx45LY5hfTVR",
+    "NFT vending machine": "KT1RHEVmFy8ZB5vqq7u8NYswpP9eXwJKmU34",
     # Other
     "h=n name registry": "KT1My1wDZHDGweCrJnQJi3wcFaS67iksirvj",
     "h=n DAO": "KT1NrAnSjrjp3Bycaw8YKPrDq2aXUTHhq8MF",
@@ -114,6 +137,7 @@ SMART_CONTRACTS = {
     "FXHASH name registry": "KT1Ezht4PDKZri7aVppVGT4Jkw39sesaFnww",
     "FXHASH pricing contract v1": "KT1FHzHxuMaNLYG8LdniY45M6RCfkF3AoXFh",
     "FXHASH pricing contract v2": "KT1EzLrXRCXij42pKfbZPn48PuxrnVki1aYY",
+    "FXHASH seeds provider": "KT1XYgKrzBbzsckGvXTPgxFyN7KNZ9RPYVWf",
     "versum registry": "KT1NUrzs7tiT4VbNPqeTxgAFa4SXeV1f3xe9",
     "contter registry": "KT1Hv7keNNq3KEhbr6fWQZvJq93mSmYF9zSf",
     "typed registry": "KT1QSERFwHZcQfUf6ZruTSLMBfzitRs6ixmP",
@@ -125,12 +149,19 @@ SMART_CONTRACTS = {
     "Tezos Domains NameRegistry": "KT1GBZmSxmnKJXGMdMLbugPfLyUPmuLSMwKS",
     "Tezos Domains NameRegistry ClaimReverseRecord": "KT1TnTr6b2YxSx2xUQ8Vz3MoWy771ta66yGx",
     "Tezos Domains NameRegistry UpdateRecord": "KT1H1MqmUM4aK9i1833EBmYCCEfkbt6ZdSBc",
+    "Tezos Domains NameRegistry CheckAddress": "KT1F7JKNqwaoLzRsMio1MQC7zv3jG9dHcDdJ",
     "teia multisig": "KT1PKBTVmdxfgkFvSeNUQacYiEFsPBw16B4P",
+    "teia core team multisig": "KT1J9FYz29RBQi1oGLw8uXyACrzXzV1dHuvb",
+    "cross marketplace collab multisig": "KT1CD8gUhrkyfpSxGgxrXheszcC6GvEMVBJD",
     "teia multisig prototype 1": "KT1Cecn3A2A4i9EmSqug45iyzUUQc4F7C9yM",
     "teia multisig prototype 2": "KT1QmSmQ8Mj8JHNKKQmepFqQZy7kDWQ1ek69",
     "teia multisig prototype 3": "KT1RtYAfoiFNkgZxQJmkSAEyQitfEQHyX3Cb",
     "teia multisig prototype 4": "KT1BVekM6Y4ykN2uEW9FFxuZ4nY8QuY19Pb6",
     "teia vote": "KT1FtGBdmmzxeV1cbGP2v7RYWtwm27s9zfEa",
+    "teia core team vote": "KT199jeqha7NVbaHGRxq8z2Z3geFBoWzjFZg",
+    "teia core team vote prototype": "KT18eAynYSw1wV4LaUNaLvUzqgFS7m7XfhDy",
+    "teia DAO token distributor": "KT1NrfV4e2qWqFrnrKyPTJth5wq2KP9VyBei",
+    "teia DAO token distributor prototype": "KT1StiWr1bqAfu7y1pLUkUC8zhwLmHpvJuJ7",
     "rarible Transfer Manager": "KT1HTmwHGvxYgACDr1oJhMNZGzxHCAnNHaHi",
     "tz1and auctions": "KT1WmMn55RjXwk5Xb4YE6asjy5BvMiEsB6nA",
     "tz1and world": "KT1EuSjJgQRGXM18TEu1WaMRyshPSkSCg11n",
@@ -140,15 +171,29 @@ SMART_CONTRACTS = {
     "Interactive experiment 1": "KT1CiUSxDpfAeuCYubpZ75v6RFvGHwVBajDt",
     "Interactive experiment 2": "KT1JP5Zobg2ymQUtqNrAqDMUAUUPnar9UbV4",
     "Interactive experiment 3": "KT1Nih5GpH763Bov23KZYS1R1R3ZWgGaAVfw",
+    "Interactive experiment 4": "KT1TMmwWNSBonHQENExdfjD5a93dTBotcUFU",
+    "Interactive experiment 5": "KT1BuzFvq3XfmzsEykqHxeKhBk4LJhM7wzku",
+    "tezos polls": "KT1JpoEdGizw1ab5pT3tEtCgWb3kxoKvtJvV",
+    "tezos polls prototype 1": "KT1KvWbz8u8gqL4ADZGvu9mjQxw1QjmKosLY",
+    "tezos polls prototype 2": "KT1QDptdkEnKSwv5VyrFmkCDhVTCD9Z8bWYK",
     "my tzprofile contract 1": "KT1C3ygBBp9Y6sBpFHuqw4PABC1wuABmUy1t",
     "my tzprofile contract 2": "KT1DCrMtizELFpUviaX4KoNKJkN2uJ7t6oHM",
+    "0x5E1F1E contract 1": "KT1RuJ87BVVxnGyKLoFdtWKFrx6M8TMikNFx",
+    "0x5E1F1E contract 2": "KT1NZmuhyqcoHb7A7PQMXYY1KT9WbWSFa2i8",
+    "0x5E1F1E contract 3": "KT1CNzPAzNXAgJy8bdASzZXPn2mydjhmRyTS",
+    "EmProps Project Contract": "KT1Lm8Unv2NVhErDzcFdfkt8zpwFSjU1Uei7",
     "TezID Store": "KT1RaNxxgmVRXpyu927rbBFq835pnQk6cfvM",
     "TezID Controller": "KT1KbV8dBrkFopgjcCc4qb2336fcGgTvRGRC",
     "Ukraine war donations contract": "KT1DWnLiUkNtAQDErXxudFEH63JC6mqg3HEx",
     "QuipuSwap hDAO old": "KT1Qm3urGqkRsWsovGzNb2R81c3dSfxpteHG",
     "QuipuSwap hDAO": "KT1QxLqukyfohPV5kPkw97Rs6cw1DDDvYgbB",
     "QuipuSwap wUSDC": "KT1U2hs5eNdeCpHouAvQXGMzGFGJowbhjqmo",
-    "QuipuSwap uUSD": "KT1EtjRRCBC2exyCRXz8UfV7jz7svnkqi7di"
+    "QuipuSwap uUSD": "KT1EtjRRCBC2exyCRXz8UfV7jz7svnkqi7di",
+    "Pakistani Flood donations contract": "KT1Jpf2TAcZS7QfBraQMBeCxjFhH6kAdDL4z",
+    "Tezos for Iran donations contract": "KT1KYfj97fpdomqyKsZSBdSVvh9afh93b4Ge",
+    "Solidarity for Iranian Artists - Open letter": "KT1FMpKJroMSJkPH6GjttZJQFn5vgHtZvZtF",
+    "Tezos community organizations contract 1": "KT1UHmyHm3cBjv5m98yrPf1R6cVXt7BVRJRW",
+    "Tezos community organizations contract 2": "KT1D95aUDDfCQnh1Ay7riNaTDaWwX63dGY6X"
 }
 
 
@@ -214,13 +259,14 @@ def get_token_link(token_alias, token_id, token_address):
         return ""
 
     # Return the correct token link
-    tokens_to_exclude = [
+    tokens_for_tzkt = [
         "hDAO", "Materia", "wUSDC", "MATH", "TezDAO", "tz1and Place",
-        "tz1and Item", "contter token"]
+        "tz1and Item", "tz1and Place v2", "testTEIA", "TEIA", "TRASH",
+        "Hedgehoge", "wXTZ objkt.com"]
 
     if token_alias == "OBJKT":
         return "https://teia.art/objkt/%s" % token_id
-    elif token_alias == "objkt.com collection":
+    elif token_alias in ["objkt.com collection", "objkt.com open edition", "editart.xyz collection"]:
         return "http://objkt.com/asset/%s/%s" % (token_address, token_id)
     elif token_alias in ["GENTK v1", "GENTK v2"]:
         return "https://www.fxhash.xyz/gentk/%s" % token_id
@@ -232,7 +278,9 @@ def get_token_link(token_alias, token_id, token_address):
         return "https://www.8bidou.com/g_item/?id=%s" % token_id
     elif token_alias == "8scribo token":
         return "https://8scribo.xyz/haikus/%s" % token_id
-    elif (token_alias in TOKENS) and (token_alias not in tokens_to_exclude):
+    elif token_alias in tokens_for_tzkt:
+        return "https://tzkt.io/%s" % token_address
+    elif token_alias in TOKENS:
         return "http://objkt.com/asset/%s/%s" % (token_address, token_id)
     else:
         return ""
@@ -415,6 +463,36 @@ def get_objktcom_collections():
     objktcom_collections = get_tzkt_query_result(url, parameters)
 
     return [collection["contract"] for collection in objktcom_collections]
+
+
+def get_objktcom_open_editions():
+    """Returns the complete list of objkt.com open editions contract addresses.
+
+    Returns
+    -------
+    list
+        A python list with the objkt.com open editions contract addresses.
+
+    """
+    url = "https://api.tzkt.io/v1/contracts/KT1DEp54k9K3hXvFCb1BT34ELwkaEcwvBWmq/similar"
+    parameters = {"select": "address"}
+
+    return get_tzkt_query_result(url, parameters)
+
+
+def get_editart_collections():
+    """Returns the complete list of editart.xyz collection addresses.
+
+    Returns
+    -------
+    list
+        A python list with the editart.xyz collection addresses.
+
+    """
+    url = "https://api.tzkt.io/v1/contracts/KT1NLcU9Z555C72sezyktQhEvFDPRW9pGAD2/similar"
+    parameters = {"select": "address"}
+
+    return get_tzkt_query_result(url, parameters)
 
 
 def get_user_transactions(user_wallets):

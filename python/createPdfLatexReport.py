@@ -9,6 +9,15 @@ data_directory = "../data"
 user_wallets = read_json_file(os.path.join(data_directory, "input", "user_wallets.json"))
 user_first_wallet = list(user_wallets.keys())[0]
 
+# Get the list of FA2 contracts associated to the objkt.com collections
+objktcom_collections = get_objktcom_collections()
+
+# Get the list of FA2 contracts associated to the objkt.com open editions
+objktcom_open_editions = get_objktcom_open_editions()
+
+# Get the list of FA2 contracts associated to the editart.xyz collections
+editart_collections = get_editart_collections()
+
 # Load the csv file containing all the user operations
 file_name = "operations_%s.csv" % user_first_wallet
 operations = pd.read_csv(os.path.join(data_directory, "output", file_name), parse_dates=["timestamp"], keep_default_na=False)
@@ -59,6 +68,8 @@ for i, token in token_trades.iterrows():
     cond = operations["timestamp"] == token["sell_timestamp"]
     cond &= operations["token_id"] == str(token["token_id"])
     cond &= operations["token_address"] == token["token_address"]
+    indices = cond.index[cond].tolist()
+    cond.iloc[indices[1:]] = False
     operations.loc[cond, token_taxed_gain_fiat] = token[taxed_gain_fiat]
 
 operations[token_taxed_gain_fiat] += operations["art_sale_amount"] * operations[tez_to_fiat]
@@ -96,7 +107,9 @@ while counter < n_operations:
 
         if (operation_groups.loc[group_counter, "token_id"] == "" and 
             operation_groups.loc[group_counter, "token_address"] == ""):
+            operation_groups.loc[group_counter, "token_name"] = operation["token_name"]
             operation_groups.loc[group_counter, "token_id"] = operation["token_id"]
+            operation_groups.loc[group_counter, "token_editions"] = operation["token_editions"]
             operation_groups.loc[group_counter, "token_address"] = operation["token_address"]
     else:
         operation_groups = pd.concat(
@@ -108,14 +121,12 @@ while counter < n_operations:
 
 # Add a column with the token link
 def create_token_link(operation):
+    token_name = operation["token_name"]
     token_id = operation["token_id"]
     token_address = operation["token_address"]
 
-    if token_id != "" and token_address != "":
-        if token_address in TOKEN_NAMES:
-            token_name = TOKEN_NAMES[token_address]
-
-            return get_token_link(token_name, token_id, token_address)
+    if token_name != "" and token_id != "" and token_address != "":
+        return get_token_link(token_name, token_id, token_address)
 
     return ""
 
