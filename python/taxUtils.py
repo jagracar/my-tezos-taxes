@@ -269,7 +269,9 @@ def get_token_link(token_alias, token_id, token_address):
     elif token_alias in ["objkt.com collection", "objkt.com open edition", "editart.xyz collection"]:
         return "http://objkt.com/asset/%s/%s" % (token_address, token_id)
     elif token_alias in ["GENTK v1", "GENTK v2"]:
-        return "https://www.fxhash.xyz/gentk/%s" % token_id
+        return "https://www.fxhash.xyz/gentk/FX0-%s" % token_id
+    elif token_alias in ["GENTK v3"]:
+        return "https://www.fxhash.xyz/gentk/FX1-%s" % token_id
     elif token_alias == "ITEM":
         return "https://versum.xyz/token/versum/%s" % token_id
     elif token_alias == "8bidou 8x8 token":

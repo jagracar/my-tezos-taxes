@@ -855,6 +855,12 @@ for t in raw_transactions:
             transaction["collect"] = True
             transaction["token_id"] = transaction["parameters"]["token_id"]
             transaction["token_editions"] = 1
+        if transaction["target"] == TOKENS["The Oracles token"]:
+            transaction["kind"] = "EmProps collect"
+            transaction["collect"] = True
+            transaction["token_id"] = transaction["parameters"]["token_id"]
+            transaction["token_editions"] = 1
+            transaction["token_address"] = transaction["target"]
     elif transaction["entrypoint"] == "mint":
         if transaction["target"] in editart_collections:
             transaction["kind"] = "editart.xyz mint"
@@ -983,10 +989,7 @@ for t in raw_transactions:
         if transaction["target"] == TOKENS["0x5E1F1E"]:
             transaction["kind"] = "0x5E1F1E operation"
 
-    if transaction["entrypoint"] == "create_sale":
-        if transaction["target"] == TOKENS["The Oracles token"]:
-            transaction["kind"] = "EmProps operation"
-    elif transaction["entrypoint"] == "share_royalties":
+    if transaction["entrypoint"] == "share_royalties":
         if transaction["target"] == SMART_CONTRACTS["EmProps Project Contract"]:
             transaction["kind"] = "EmProps operation"
 
@@ -1193,6 +1196,16 @@ for t in raw_transactions:
             first_token_transfer = matching_token_transfers.iloc[0]
             transaction["token_id"] = first_token_transfer["token_id"]
             transaction["token_editions"] = int(first_token_transfer["token_editions"])
+
+    if (transaction["token_id"] is not None) and  (transaction["token_editions"] is not None) and (transaction["token_address"] is None):
+        cond = (token_transfers["timestamp"] == transaction["timestamp"]) & (
+            token_transfers["token_id"] == transaction["token_id"]) & (
+            token_transfers["token_editions"] == str(transaction["token_editions"]))
+        matching_token_transfers = token_transfers[cond]
+
+        if (len(matching_token_transfers) >= 1):
+            first_token_transfer = matching_token_transfers.iloc[0]
+            transaction["token_address"] = first_token_transfer["token_address"]
 
     # Save the unprocessed raw transactions
     if transaction["kind"] is None:
