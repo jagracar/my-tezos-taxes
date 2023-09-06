@@ -585,6 +585,50 @@ def get_user_delegations(user_wallets):
     return get_tzkt_query_result(url, parameters)
 
 
+def get_user_endorsing_rewards(user_wallets):
+    """Returns the complete list of user endorsing rewards.
+
+    Parameters
+    ----------
+    user_wallets: list
+        The user wallet addresses.
+
+    Returns
+    -------
+    list
+        A python list with the user endorsing rewards.
+
+    """
+    url = "https://api.tzkt.io/v1/operations/endorsing_rewards"
+    parameters = {
+        "baker.in": ",".join(user_wallets),
+        "quote": "eur,usd"}
+
+    return get_tzkt_query_result(url, parameters)
+
+
+def get_user_bakings(user_wallets):
+    """Returns the complete list of user baking operations.
+
+    Parameters
+    ----------
+    user_wallets: list
+        The user wallet addresses.
+
+    Returns
+    -------
+    list
+        A python list with the user baking operations.
+
+    """
+    url = "https://api.tzkt.io/v1/operations/baking"
+    parameters = {
+        "anyof.proposer.producer.in": ",".join(user_wallets),
+        "quote": "eur,usd"}
+
+    return get_tzkt_query_result(url, parameters)
+
+
 def combine_operations(operations_1, operations_2):
     """Combines two lists of operations by increasing block level.
 

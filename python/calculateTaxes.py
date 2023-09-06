@@ -99,6 +99,10 @@ if language == "english":
         operations["prize_amount"].sum(), (operations["prize_amount"] * tez_to_fiat).sum(), fiat_coin))
     print("   %.2f tez (%.2f %s) came from staking rewards." % (
         operations["staking_rewards_amount"].sum(), (operations["staking_rewards_amount"] * tez_to_fiat).sum(), fiat_coin))
+    print("   %.2f tez (%.2f %s) came from baking." % (
+        operations["baking_amount"].sum(), (operations["baking_amount"] * tez_to_fiat).sum(), fiat_coin))
+    print("   %.2f tez (%.2f %s) came from endorsing rewards." % (
+        operations["endorsing_rewards_amount"].sum(), (operations["endorsing_rewards_amount"] * tez_to_fiat).sum(), fiat_coin))
     print("   %.2f tez (%.2f %s) came from other sources." % (
         operations["received_amount_others"].sum(), (operations["received_amount_others"] * tez_to_fiat).sum(), fiat_coin))
 
@@ -147,6 +151,10 @@ if language == "english":
         operations["prize_amount"].sum(), (operations["prize_amount"] * tez_to_fiat).sum(), fiat_coin))
     print("   %.2f tez (%.2f %s) from staking rewards." % (
         operations["staking_rewards_amount"].sum(), (operations["staking_rewards_amount"] * tez_to_fiat).sum(), fiat_coin))
+    print("   %.2f tez (%.2f %s) from baking." % (
+        operations["baking_amount"].sum(), (operations["baking_amount"] * tez_to_fiat).sum(), fiat_coin))
+    print("   %.2f tez (%.2f %s) from endorsing rewards." % (
+        operations["endorsing_rewards_amount"].sum(), (operations["endorsing_rewards_amount"] * tez_to_fiat).sum(), fiat_coin))
 
     if tez_exchange_gain_fiat.sum() > 0:
         print("   %.2f %s from tez exchange gains associated to tez exchange operations (using the FIFO method)." % (

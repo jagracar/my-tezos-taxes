@@ -82,13 +82,14 @@ n_operations = len(operations)
 bool_keywords = [
     "internal", "ignore", "mint", "collect", "active_offer", "art_sale",
     "collection_sale", "staking", "origination", "reveal", "delegation",
-    "prize", "donation", "buy_tez", "sell_tez"]
+    "baking", "endorsing_reward", "prize", "donation", "buy_tez", "sell_tez"]
 amount_keywords = [
     "received_amount", "art_sale_amount", "collection_sale_amount",
-    "staking_rewards_amount", "prize_amount", "buy_tez_amount",
-    "received_amount_others", "spent_amount", "collect_amount",
-    "active_offer_amount", "donation_amount", "sell_tez_amount",
-    "spent_amount_others", "spent_fees", taxed_gain_fiat, token_taxed_gain_fiat]
+    "staking_rewards_amount", "baking_amount", "endorsing_rewards_amount",
+    "prize_amount", "buy_tez_amount", "received_amount_others", "spent_amount",
+    "collect_amount", "active_offer_amount", "donation_amount",
+    "sell_tez_amount", "spent_amount_others", "spent_fees", taxed_gain_fiat,
+    token_taxed_gain_fiat]
 
 while counter < n_operations:
     # Get the next operation
@@ -136,6 +137,8 @@ operation_groups["token_link"] = operation_groups.apply(create_token_link, axis=
 operation_groups["tax_kind"] = "other" if language == "english" else "anderes"
 operation_groups.loc[operation_groups["mint"], "tax_kind"] = "mint NFT" if language == "english" else "NFT prägen"
 operation_groups.loc[operation_groups["staking"], "tax_kind"] = "staking rewards"
+operation_groups.loc[operation_groups["baking"], "tax_kind"] = "baking"
+operation_groups.loc[operation_groups["endorsing_reward"], "tax_kind"] = "endorsing rewards"
 operation_groups.loc[operation_groups["collect"], "tax_kind"] = "buy NFT" if language == "english" else "NFT kaufen"
 operation_groups.loc[operation_groups["art_sale"], "tax_kind"] = "sell NFT" if language == "english" else "NFT verkaufen"
 operation_groups.loc[operation_groups["collection_sale"], "tax_kind"] = "sell NFT" if language == "english" else "NFT verkaufen"
@@ -168,7 +171,7 @@ table += "\\showrowcolors\n"
 for i, operation in operation_groups.iterrows():
     tax_fiat = (
         operation[taxed_gain_fiat] + operation[token_taxed_gain_fiat] +
-        (operation["staking_rewards_amount"] + operation["prize_amount"]) * operation[tez_to_fiat])
+        (operation["staking_rewards_amount"] + operation["baking_amount"] + operation["endorsing_rewards_amount"] + operation["prize_amount"]) * operation[tez_to_fiat])
     table += "%s & %s & %f & %f & %f & %f & %f & %s & %s \\tabularnewline\n" % (
         operation["timestamp"],
         operation["tax_kind"],

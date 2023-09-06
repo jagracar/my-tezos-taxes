@@ -25,11 +25,13 @@ burn_wallets = read_json_file(os.path.join(data_directory, "input", "burn_wallet
 file_name = "token_transfers_%s.csv" % user_first_wallet
 token_transfers = pd.read_csv(os.path.join(data_directory, "output", file_name), parse_dates=["timestamp"], keep_default_na=False)
 
-# Get the user raw transactions and originations information
+# Get the user raw information
 raw_transactions = get_user_transactions(user_wallets)
 raw_originations = get_user_originations(user_wallets)
 raw_reveals = get_user_reveals(user_wallets)
 raw_delegations = get_user_delegations(user_wallets)
+raw_bakings = get_user_bakings(user_wallets)
+raw_endorsing_rewards = get_user_endorsing_rewards(user_wallets)
 
 # Get the user mints, swaps, collects, auction bids, art sales and collection sales
 user_mints = get_user_mints(user_wallets)
@@ -83,6 +85,8 @@ for t in raw_transactions:
         "origination": False,
         "reveal": False,
         "delegation": False,
+        "baking": False,
+        "endorsing_reward": False,
         "prize": False,
         "donation": False,
         "buy_tez": t["sender"]["address"] in exchange_wallets,
@@ -1240,6 +1244,8 @@ for o in raw_originations:
         "origination": True,
         "reveal": False,
         "delegation": False,
+        "baking": False,
+        "endorsing_reward": False,
         "prize": False,
         "donation": False,
         "buy_tez": False,
@@ -1283,6 +1289,8 @@ for r in raw_reveals:
         "origination": False,
         "reveal": True,
         "delegation": False,
+        "baking": False,
+        "endorsing_reward": False,
         "prize": False,
         "donation": False,
         "buy_tez": False,
@@ -1326,6 +1334,8 @@ for d in raw_delegations:
         "origination": False,
         "reveal": False,
         "delegation": True,
+        "baking": False,
+        "endorsing_reward": False,
         "prize": False,
         "donation": False,
         "buy_tez": False,
@@ -1343,10 +1353,102 @@ for d in raw_delegations:
     # Add the processed delegation
     delegations.append(delegation)
 
+# Process the raw baking operations
+bakings = []
+
+for b in raw_bakings:
+    # Save the most relevant information
+    baking = {
+        "timestamp": b["timestamp"],
+        "level": b["level"],
+        "kind": "baking",
+        "entrypoint": None,
+        "parameters": None,
+        "initiator": None,
+        "sender": None,
+        "target": b["producer"]["address"],
+        "applied": True,
+        "internal": False,
+        "ignore": False,
+        "mint": False,
+        "collect": False,
+        "active_offer": False,
+        "art_sale": False,
+        "collection_sale": False,
+        "staking": False,
+        "origination": False,
+        "reveal": False,
+        "delegation": False,
+        "baking": True,
+        "endorsing_reward": False,
+        "prize": False,
+        "donation": False,
+        "buy_tez": False,
+        "sell_tez": False,
+        "amount": (b["reward"] + b["bonus"] + b["fees"]) / 1e6,
+        "fees": 0,
+        "tez_to_euros": b["quote"]["eur"],
+        "tez_to_usd": b["quote"]["usd"],
+        "token_id": None,
+        "token_editions": None,
+        "token_address": None,
+        "hash": b["block"],
+        "comment": ""}
+
+    # Add the processed baking
+    bakings.append(baking)
+
+# Process the raw endorsing rewards
+endorsing_rewards = []
+
+for e in raw_endorsing_rewards:
+    # Save the most relevant information
+    endorsing_reward = {
+        "timestamp": e["timestamp"],
+        "level": e["level"],
+        "kind": "endorsing reward",
+        "entrypoint": None,
+        "parameters": None,
+        "initiator": None,
+        "sender": None,
+        "target": e["baker"]["address"],
+        "applied": True,
+        "internal": False,
+        "ignore": False,
+        "mint": False,
+        "collect": False,
+        "active_offer": False,
+        "art_sale": False,
+        "collection_sale": False,
+        "staking": False,
+        "origination": False,
+        "reveal": False,
+        "delegation": False,
+        "baking": False,
+        "endorsing_reward": True,
+        "prize": False,
+        "donation": False,
+        "buy_tez": False,
+        "sell_tez": False,
+        "amount": e["received"] / 1e6,
+        "fees": 0,
+        "tez_to_euros": e["quote"]["eur"],
+        "tez_to_usd": e["quote"]["usd"],
+        "token_id": None,
+        "token_editions": None,
+        "token_address": None,
+        "hash": e["block"],
+        "comment": ""}
+
+    # Add the processed endorsing rewards
+    endorsing_rewards.append(endorsing_reward)
+
 # Combine the transactions, originations and reveals in a single array
 combined_operations = combine_operations(transactions, originations)
 combined_operations = combine_operations(combined_operations, reveals)
 combined_operations = combine_operations(combined_operations, delegations)
+combined_operations = combine_operations(combined_operations, bakings)
+combined_operations = combine_operations(combined_operations, endorsing_rewards)
 
 # Apply the operation corrections specified by the user
 operation_corrections = read_json_file(os.path.join(data_directory, "input", "operation_corrections.json"))
@@ -1396,9 +1498,10 @@ columns = [
     "sender", "target", "is_initiator", "is_sender", "is_target", "applied",
     "internal", "ignore", "mint", "collect", "active_offer", "art_sale",
     "collection_sale", "staking", "origination", "reveal", "delegation",
-    "prize", "donation", "buy_tez", "sell_tez", "amount", "fees",
-    "received_amount", "art_sale_amount", "collection_sale_amount",
-    "staking_rewards_amount", "prize_amount", "buy_tez_amount",
+    "baking", "endorsing_reward", "prize", "donation", "buy_tez", "sell_tez",
+    "amount", "fees", "received_amount", "art_sale_amount",
+    "collection_sale_amount", "staking_rewards_amount", "baking_amount",
+    "endorsing_rewards_amount", "prize_amount", "buy_tez_amount",
     "received_amount_others", "spent_amount", "collect_amount",
     "active_offer_amount", "donation_amount", "sell_tez_amount",
     "spent_amount_others", "spent_fees", "tez_to_euros", "tez_to_usd",
@@ -1407,9 +1510,9 @@ columns = [
 format = [
     "%s", "%i", "%f", "%s", "%s", "%s", "%s", "%s", "%r", "%r", "%r", "%r",
     "%r", "%r", "%r", "%r", "%r", "%r", "%r", "%r", "%r", "%r", "%r", "%r",
-    "%r", "%r", "%r", "%f", "%f", "%f", "%f", "%f", "%f", "%f", "%f", "%f",
-    "%f", "%f", "%f", "%f", "%f", "%f", "%f", "%f", "%f", "%s", "%s", "%s",
-    "%s", "%s", "%s"]
+    "%r", "%r", "%r", "%r", "%r", "%f", "%f", "%f", "%f", "%f", "%f", "%f",
+    "%f", "%f", "%f", "%f", "%f", "%f", "%f", "%f", "%f", "%f", "%f", "%f",
+    "%f", "%s", "%s", "%s", "%s", "%s", "%s"]
 
 with open(os.path.join(data_directory, "output", file_name), "w", newline="\n") as output_file:
     writer = csv.writer(output_file)
@@ -1435,9 +1538,11 @@ with open(os.path.join(data_directory, "output", file_name), "w", newline="\n") 
         art_sale_amount = amount if (is_target and applied and (not ignore) and op["art_sale"]) else 0
         collection_sale_amount = amount if (is_target and applied and (not ignore) and op["collection_sale"]) else 0
         staking_rewards_amount = amount if (is_target and applied and (not ignore) and op["staking"]) else 0
+        baking_amount = amount if (is_target and applied and (not ignore) and op["baking"]) else 0
+        endorsing_rewards_amount = amount if (is_target and applied and (not ignore) and op["endorsing_reward"]) else 0
         prize_amount = amount if (is_target and applied and (not ignore) and op["prize"]) else 0
         buy_tez_amount = amount if (is_target and applied and (not ignore) and op["buy_tez"]) else 0
-        received_amount_others = amount if (is_target and applied and (not ignore) and (not (op["art_sale"] or op["collection_sale"] or op["staking"] or op["prize"] or op["buy_tez"]))) else 0
+        received_amount_others = amount if (is_target and applied and (not ignore) and (not (op["art_sale"] or op["collection_sale"] or op["staking"] or op["baking"] or op["endorsing_reward"] or op["prize"] or op["buy_tez"]))) else 0
         spent_amount = amount if (is_sender and applied and (not ignore) and (not op["active_offer"])) else 0
         collect_amount = amount if (is_sender and applied and (not ignore) and op["collect"]) else 0
         active_offer_amount = amount if (is_sender and applied and (not ignore) and op["active_offer"]) else 0
@@ -1474,7 +1579,7 @@ with open(os.path.join(data_directory, "output", file_name), "w", newline="\n") 
             op["kind"],
             op["entrypoint"] if op["entrypoint"] is not None else "",
             aliases.get(op["initiator"], op["initiator"]).replace(",", " ") if op["initiator"] is not None else "",
-            aliases.get(op["sender"], op["sender"]).replace(",", " "),
+            aliases.get(op["sender"], op["sender"]).replace(",", " ") if op["sender"] is not None else "",
             aliases.get(op["target"], op["target"]).replace(",", " ") if op["target"] is not None else "",
             is_initiator,
             is_sender,
@@ -1491,6 +1596,8 @@ with open(os.path.join(data_directory, "output", file_name), "w", newline="\n") 
             op["origination"],
             op["reveal"],
             op["delegation"],
+            op["baking"],
+            op["endorsing_reward"],
             op["prize"],
             op["donation"],
             op["buy_tez"],
@@ -1501,6 +1608,8 @@ with open(os.path.join(data_directory, "output", file_name), "w", newline="\n") 
             art_sale_amount,
             collection_sale_amount,
             staking_rewards_amount,
+            baking_amount,
+            endorsing_rewards_amount,
             prize_amount,
             buy_tez_amount,
             received_amount_others,
