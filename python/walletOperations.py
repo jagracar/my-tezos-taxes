@@ -54,6 +54,14 @@ editart_collections = get_editart_collections()
 fa12_tokens = get_fa12_tokens()
 fa2_tokens = get_fa2_tokens()
 
+# Get the 3Route tokens
+three_route_tokens = {
+    SMART_CONTRACTS["3Route v1"] : get_three_route_tokens(1),
+    SMART_CONTRACTS["3Route v2"] : get_three_route_tokens(2),
+    SMART_CONTRACTS["3Route v3"] : get_three_route_tokens(3),
+    SMART_CONTRACTS["3Route v4"] : get_three_route_tokens(4)
+}
+
 # Get the main tezos tokens and smart contract aliases
 token_aliases = {address: name for name, address in TOKENS.items()}
 smart_contract_aliases = {address: alias for alias, address in SMART_CONTRACTS.items()}
@@ -61,6 +69,7 @@ smart_contract_aliases = {address: alias for alias, address in SMART_CONTRACTS.i
 # Process the raw transactions
 transactions = []
 unprocessed_transactions = []
+three_route_operations = {}
 
 for t in raw_transactions:
     # Save the most relevant information
@@ -360,7 +369,7 @@ for t in raw_transactions:
             transaction["token_address"] = TOKENS["Tezos domain token"]
     elif transaction["entrypoint"] == "execute":
         if transaction["sender"] == SMART_CONTRACTS["Tezos Domains TLDRegistrar"]:
-            #if transaction["parameters"]["action_name"] == "SetChildRecord":
+            # if transaction["parameters"]["action_name"] == "SetChildRecord":
             transaction["kind"] = "tezos domain mint"
             transaction["collect"] = True
             transaction["token_editions"] = "1"
@@ -969,6 +978,7 @@ for t in raw_transactions:
     if transaction["entrypoint"] == "renew":
         if transaction["target"] == SMART_CONTRACTS["Tezos Domains registrar"]:
             transaction["kind"] = "tezos domain renovation"
+            transaction["collect"] = True 
             transaction["token_editions"] = "1"
             transaction["token_address"] = TOKENS["Tezos domain token"]
     elif transaction["entrypoint"] == "balance_of":
@@ -1169,6 +1179,51 @@ for t in raw_transactions:
     if transaction["entrypoint"] == "accept_invitation":
         if transaction["target"] == SMART_CONTRACTS["objkt.com Minting Factory"]:
             transaction["kind"] = "accept objkt.com invitation"
+
+    if transaction["entrypoint"] == "execute":
+        if (transaction["target"] in [SMART_CONTRACTS["3Route v1"], SMART_CONTRACTS["3Route v2"], SMART_CONTRACTS["3Route v3"], SMART_CONTRACTS["3Route v4"]]) and (transaction["sender"] in user_wallets) and (transaction["parameters"]["receiver"] == transaction["sender"]):
+            token_in = three_route_tokens[transaction["target"]][transaction["parameters"]["token_in_id"]]
+            token_out = three_route_tokens[transaction["target"]][transaction["parameters"]["token_out_id"]]
+
+            if "xtz" in token_in:
+                if token_out["fa2"]["contract_address"] in token_aliases:
+                    transaction["kind"] = "buy %s in 3Route" % token_aliases[token_out["fa2"]["contract_address"]]
+                else:
+                    transaction["kind"] = "buy token in 3Route"
+
+                transaction["collect"] = True
+                transaction["token_id"] = token_out["fa2"]["fa2_id"]
+                transaction["token_editions"] = None
+                transaction["token_address"] = token_out["fa2"]["contract_address"]
+            elif "xtz" in token_out:
+                if token_in["fa2"]["contract_address"] in token_aliases:
+                    transaction["kind"] = "sell %s in 3Route" % token_aliases[token_in["fa2"]["contract_address"]]
+                else:
+                    transaction["kind"] = "sell token in 3Route"
+
+                transaction["collection_sale"] = True
+                transaction["token_id"] = token_in["fa2"]["fa2_id"]
+                transaction["token_editions"] = None
+                transaction["token_address"] = token_in["fa2"]["contract_address"]
+            else:
+                transaction["kind"] = "swap tokens in 3Route"
+                transaction["token_id"] = token_out["fa2"]["fa2_id"]
+                transaction["token_editions"] = None
+                transaction["token_address"] = token_out["fa2"]["contract_address"]
+
+            three_route_operations[transaction["hash"]] = {
+                "kind": transaction["kind"],
+                "collect": transaction["collect"],
+                "collection_sale": transaction["collection_sale"],
+                "token_id": transaction["token_id"],
+                "token_editions": transaction["token_editions"],
+                "token_address": transaction["token_address"]
+            }
+    elif transaction["hash"] in three_route_operations and (transaction["initiator"] in user_wallets):
+        for key, value in three_route_operations[transaction["hash"]].items():
+            transaction[key] = value
+
+        transaction["kind"] = "3Route operation"
 
     # Add the missing token information from the token transfers
     if (transaction["token_id"] is None) and (transaction["token_editions"] is not None) and (transaction["token_address"] is not None):

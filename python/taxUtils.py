@@ -193,7 +193,11 @@ SMART_CONTRACTS = {
     "Tezos for Iran donations contract": "KT1KYfj97fpdomqyKsZSBdSVvh9afh93b4Ge",
     "Solidarity for Iranian Artists - Open letter": "KT1FMpKJroMSJkPH6GjttZJQFn5vgHtZvZtF",
     "Tezos community organizations contract 1": "KT1UHmyHm3cBjv5m98yrPf1R6cVXt7BVRJRW",
-    "Tezos community organizations contract 2": "KT1D95aUDDfCQnh1Ay7riNaTDaWwX63dGY6X"
+    "Tezos community organizations contract 2": "KT1D95aUDDfCQnh1Ay7riNaTDaWwX63dGY6X",
+    "3Route v1": "KT1PBHtvMNqm8TL4HFwnAaJNcemxa2cZbauj",
+    "3Route v2": "KT1Tuta6vbpHhZ15ixsYD3qJdhnpEAuogLQ9",
+    "3Route v3": "KT1R7WEtNNim3YgkxPt8wPMczjH3eyhbJMtz",
+    "3Route v4": "KT1V5XKmeypanMS9pR65REpqmVejWBZURuuT"
 }
 
 
@@ -495,6 +499,36 @@ def get_editart_collections():
     parameters = {"select": "address"}
 
     return get_tzkt_query_result(url, parameters)
+
+
+def get_three_route_tokens(version):
+    """Returns the complete list of tokens traded by 3Route.
+
+    Parameters
+    ----------
+    version: int
+        The 3Route contract version.
+
+    Returns
+    -------
+    dict
+        A python dictionary with the 3Route tokens information.
+
+    """
+    if version == 1:
+        tokens_bigmap_id = "330693"
+    elif version == 2:
+        tokens_bigmap_id = "350651"
+    elif version == 3:
+        tokens_bigmap_id = "430059"
+    elif version == 4:
+        tokens_bigmap_id = "528777"
+
+    url = "https://api.tzkt.io/v1/bigmaps/%s/keys" % tokens_bigmap_id
+    parameters = {"select": "key,value"}
+    entries = get_tzkt_query_result(url, parameters)
+
+    return {entry["key"]: entry["value"] for entry in entries}
 
 
 def get_user_transactions(user_wallets):

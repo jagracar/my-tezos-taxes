@@ -67,7 +67,7 @@ cond = (sold_tokens["timestamp"] >= start_date) & (sold_tokens["timestamp"] <= e
 sold_tokens = sold_tokens[cond]
 cond = (transferred_tokens["timestamp"] >= start_date) & (transferred_tokens["timestamp"] <= end_date)
 transferred_tokens = transferred_tokens[cond]
-cond = (token_trades["sell_timestamp"] >= start_date) & (token_trades["sell_timestamp"] <= end_date)
+cond = (token_trades["sell_timestamp"] >= start_date) & (token_trades["sell_timestamp"] <= end_date) & (token_trades["taxed_gain"] != 0)
 token_trades = token_trades[cond]
 cond = (tez_exhange_gains["timestamp"] >= start_date) & (tez_exhange_gains["timestamp"] <= end_date)
 tez_exhange_gains = tez_exhange_gains[cond]
@@ -75,10 +75,14 @@ tez_exhange_gains = tez_exhange_gains[cond]
 # Use the correct fiat columns
 if fiat_coin in ["euros", "Euro"]:
     tez_to_fiat = operations["tez_to_euros"]
+    token_trades_buy_fiat = token_trades["buy_price_euros"]
+    token_trades_sell_fiat = token_trades["sell_price_euros"]
     token_trades_gain_fiat = token_trades["taxed_gain_euros"]
     tez_exchange_gain_fiat = tez_exhange_gains["taxed_gain_euros"]
 else:
     tez_to_fiat = operations["tez_to_usd"]
+    token_trades_buy_fiat = token_trades["buy_price_usd"]
+    token_trades_sell_fiat = token_trades["sell_price_usd"]
     token_trades_gain_fiat = token_trades["taxed_gain_usd"]
     tez_exchange_gain_fiat = tez_exhange_gains["taxed_gain_usd"]
 
@@ -192,6 +196,10 @@ elif language == "german":
         operations["prize_amount"].sum(), (operations["prize_amount"] * tez_to_fiat).sum(), fiat_coin))
     print("   %.2f tez (%.2f %s) Einkünfte durch Staking." % (
         operations["staking_rewards_amount"].sum(), (operations["staking_rewards_amount"] * tez_to_fiat).sum(), fiat_coin))
+    print("   %.2f tez (%.2f %s) Einkünfte durch Baking." % (
+        operations["baking_amount"].sum(), (operations["baking_amount"] * tez_to_fiat).sum(), fiat_coin))
+    print("   %.2f tez (%.2f %s) Einkünfte durch Endorsing Rewards." % (
+        operations["endorsing_rewards_amount"].sum(), (operations["endorsing_rewards_amount"] * tez_to_fiat).sum(), fiat_coin))
     print("   %.2f tez (%.2f %s) aus anderen Quellen." % (
         operations["received_amount_others"].sum(), (operations["received_amount_others"] * tez_to_fiat).sum(), fiat_coin))
 
@@ -238,8 +246,12 @@ elif language == "german":
 
     print("   %.2f tez (%.2f %s) durch Preise (Hackathons, Vergütungen durch eine Community, etc)." % (
         operations["prize_amount"].sum(), (operations["prize_amount"] * tez_to_fiat).sum(), fiat_coin))
-    print("   %.2f tez (%.2f %s) from staking rewards." % (
+    print("   %.2f tez (%.2f %s) durch Staking." % (
         operations["staking_rewards_amount"].sum(), (operations["staking_rewards_amount"] * tez_to_fiat).sum(), fiat_coin))
+    print("   %.2f tez (%.2f %s) durch Baking." % (
+        operations["baking_amount"].sum(), (operations["baking_amount"] * tez_to_fiat).sum(), fiat_coin))
+    print("   %.2f tez (%.2f %s) durch Endorsing Rewards." % (
+        operations["endorsing_rewards_amount"].sum(), (operations["endorsing_rewards_amount"] * tez_to_fiat).sum(), fiat_coin))
 
     if tez_exchange_gain_fiat.sum() > 0:
         print("   %.2f %s durch Einkünfte auf einer Handelsplattform (mittels FIFO Methode)." % (
@@ -262,3 +274,12 @@ elif language == "german":
             abs(tez_exchange_gain_fiat.sum()), fiat_coin))
 
     print("\n Details zu den Transaktionen finden sich in folgender Tabelle: %s\n" % os.path.join(data_directory, "output", token_trades_file_name))
+
+if True:
+    print(" Global effective gains or losses (using the FIFO method for tez and NFTs):\n")
+    print("   Bought tez for %.2f %s" % (
+        ((operations["sell_tez_amount"] + operations["collect_amount"] ) * tez_to_fiat).sum() - tez_exchange_gain_fiat.sum() + token_trades_buy_fiat.sum(), fiat_coin))
+    print("   Sold tez for %.2f %s" % (
+        ((operations["sell_tez_amount"] + operations["collect_amount"] + operations["art_sale_amount"]) * tez_to_fiat).sum() + token_trades_sell_fiat.sum(), fiat_coin))
+    print("   Gains/losses: %.2f %s\n" % (
+        (operations["art_sale_amount"] * tez_to_fiat).sum() + tez_exchange_gain_fiat.sum() + token_trades_gain_fiat.sum(), fiat_coin))

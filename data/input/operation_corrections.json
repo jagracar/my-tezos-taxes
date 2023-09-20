@@ -34,19 +34,25 @@
 		"comment": "Tezos community reward",
 		"link": "https://medium.com/tezoscommons/tezos-community-rewards-march-2022-202712d791a3",
 		"kind": "tezos community reward",
-		"prize": true
+		"prize": false
 	},
 	"opEtD83fGwsLtuKEAgpPy4YYMvmsiZd8vawrutQsuEESMjBJWcS": {
 		"comment": "Tezos community reward",
 		"link": "https://news.tezoscommons.org/tezos-community-rewards-april-2022-winners-d329c83d7aff",
 		"kind": "tezos community reward",
-		"prize": true
+		"prize": false
 	},
     "onq7aCrRgowoV9Se5r5bMhkgBCgpfY9iP7yofEWSxzPyCmg2H1K": {
         "comment": "Tezos community reward",
         "link": "https://news.tezoscommons.org/tezos-community-rewards-june-2023-46710f7d90ca",
         "kind": "tezos community reward",
-        "prize": true
+        "prize": false
+    },
+    "opPhHBbbDxEJzT8kh9KRsBBgZ7sy5wBNjzU3Pd8L3ZjRiemTvpQ": {
+        "comment": "Tezos community reward",
+        "link": "https://news.tezoscommons.org/tezos-community-rewards-august-2023-4d0e13a5b40f",
+        "kind": "tezos community reward",
+        "prize": false
     },
 	"oojygYfafCReCRib8qhKiYoSadXQurXLv6LygLjNuuhs33Ec58p": {
 		"comment": "Donation to the Processing Foundation",
