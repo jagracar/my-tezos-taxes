@@ -58,6 +58,8 @@ TOKENS = {
     "wUSDC": "KT18fp5rcTW7mbWDmzFwjLDUhs5MeJmagDSZ",
     "uUSD": "KT1XRPEPXbZK25r3Htzp2o1x7xdMMmfocKNW",
     "TRASH": "KT1ShjB24tTXX8m5oDCrBHXqynCpmNJDxpD5",
+    "KALAM": "KT1A5P4ejnLix13jtadsfV9GCnXLMNnab8UT",
+    "QUIPU": "KT193D4vozYnhGJQVtw7CoxxqphqUEEwK6Vb",
     "spam token 1": "KT1AShwxNxqEha1PeaVdh7zRuzeneFzHmjJs",
     "spam token 2": "KT18j785rB3G4wXxEpqwwG2hJ2iZrjLAbeo7"
 }
@@ -189,6 +191,11 @@ SMART_CONTRACTS = {
     "QuipuSwap hDAO": "KT1QxLqukyfohPV5kPkw97Rs6cw1DDDvYgbB",
     "QuipuSwap wUSDC": "KT1U2hs5eNdeCpHouAvQXGMzGFGJowbhjqmo",
     "QuipuSwap uUSD": "KT1EtjRRCBC2exyCRXz8UfV7jz7svnkqi7di",
+    "QuipuSwap HEH": "KT1BgezWwHBxA9NrczwK9x3zfgFnUkc7JJ4b",
+    "QuipuSwap KALAM": "KT1J3wTYb4xk5BsSBkg6ML55bX1xq7desS34",
+    "QuipuSwap QUIPU": "KT1X3zxdTzPB9DgVzA3ad6dgZe9JEamoaeRy",
+    "QuipuSwap MTRIA": "KT1FptuULGK69mZRsBz62CSFdRs52etEb6Ah",
+    "QuipuSwap kUSD": "KT1K4EwTpbvYN9agJdjpyJm4ZZdhpUNKB3F6",
     "Pakistani Flood donations contract": "KT1Jpf2TAcZS7QfBraQMBeCxjFhH6kAdDL4z",
     "Tezos for Iran donations contract": "KT1KYfj97fpdomqyKsZSBdSVvh9afh93b4Ge",
     "Solidarity for Iranian Artists - Open letter": "KT1FMpKJroMSJkPH6GjttZJQFn5vgHtZvZtF",

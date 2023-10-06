@@ -572,6 +572,16 @@ for t in raw_transactions:
             else:
                 transaction["kind"] = "remove %s operators" % fa2_tokens[transaction["target"]]
                 transaction["token_id"] = transaction["parameters"][0]["remove_operator"]["token_id"]
+    elif transaction["entrypoint"] == "approve":
+        if transaction["target"] in fa12_tokens:
+            transaction["token_id"] = "0"
+            transaction["token_editions"] = int(transaction["parameters"]["value"])
+            transaction["token_address"] = transaction["target"]
+
+            if transaction["token_editions"] > 0:
+                transaction["kind"] = "add %s operators" % fa12_tokens[transaction["target"]]
+            else:
+                transaction["kind"] = "remove %s operators" % fa12_tokens[transaction["target"]]
     elif transaction["entrypoint"] == "update_operators_for_all":
         if transaction["target"] in TOKENS["Rarible token"]:
             transaction["kind"] = "update %s operators" % token_aliases[transaction["target"]]
@@ -1140,6 +1150,36 @@ for t in raw_transactions:
             transaction["token_id"] = "0"
             transaction["token_amount"] = int(transaction["parameters"]["amount"])
             transaction["token_address"] = TOKENS["uUSD"]
+        elif transaction["target"] == SMART_CONTRACTS["QuipuSwap HEH"]:
+            transaction["kind"] = "sell HEH in QuipuSwap"
+            transaction["collection_sale"] = True
+            transaction["token_id"] = "0"
+            transaction["token_amount"] = int(transaction["parameters"]["amount"])
+            transaction["token_address"] = "KT1G1cCRNBgQ48mVDjopHjEmTN5Sbtar8nn9"
+        elif transaction["target"] == SMART_CONTRACTS["QuipuSwap KALAM"]:
+            transaction["kind"] = "sell KALAM in QuipuSwap"
+            transaction["collection_sale"] = True
+            transaction["token_id"] = "0"
+            transaction["token_amount"] = int(transaction["parameters"]["amount"])
+            transaction["token_address"] = TOKENS["KALAM"]
+        elif transaction["target"] == SMART_CONTRACTS["QuipuSwap QUIPU"]:
+            transaction["kind"] = "sell QUIPU in QuipuSwap"
+            transaction["collection_sale"] = True
+            transaction["token_id"] = "0"
+            transaction["token_amount"] = int(transaction["parameters"]["amount"])
+            transaction["token_address"] = TOKENS["QUIPU"]
+        elif transaction["target"] == SMART_CONTRACTS["QuipuSwap MTRIA"]:
+            transaction["kind"] = "sell Materia in QuipuSwap"
+            transaction["collection_sale"] = True
+            transaction["token_id"] = "0"
+            transaction["token_amount"] = int(transaction["parameters"]["amount"])
+            transaction["token_address"] = TOKENS["Materia"]
+        elif transaction["target"] == SMART_CONTRACTS["QuipuSwap kUSD"]:
+            transaction["kind"] = "sell kUSD in QuipuSwap"
+            transaction["collection_sale"] = True
+            transaction["token_id"] = "0"
+            transaction["token_amount"] = int(transaction["parameters"]["amount"])
+            transaction["token_address"] = "KT1K9gCRgaLRFKTErYt1wVxA3Frb9FjasjTV"
     elif transaction["entrypoint"] == "tezToTokenPayment":
         if transaction["target"] in [SMART_CONTRACTS["QuipuSwap hDAO old"], SMART_CONTRACTS["QuipuSwap hDAO"]]:
             transaction["kind"] = "buy hDAO in QuipuSwap"
@@ -1156,6 +1196,31 @@ for t in raw_transactions:
             transaction["collect"] = True
             transaction["token_id"] = "0"
             transaction["token_address"] = TOKENS["uUSD"]
+        elif transaction["target"] == SMART_CONTRACTS["QuipuSwap HEH"]:
+            transaction["kind"] = "buy HEH in QuipuSwap"
+            transaction["collect"] = True
+            transaction["token_id"] = "0"
+            transaction["token_address"] = "KT1G1cCRNBgQ48mVDjopHjEmTN5Sbtar8nn9"
+        elif transaction["target"] == SMART_CONTRACTS["QuipuSwap KALAM"]:
+            transaction["kind"] = "buy KALAM in QuipuSwap"
+            transaction["collect"] = True
+            transaction["token_id"] = "0"
+            transaction["token_address"] = TOKENS["KALAM"]
+        elif transaction["target"] == SMART_CONTRACTS["QuipuSwap QUIPU"]:
+            transaction["kind"] = "buy KALAM in QuipuSwap"
+            transaction["collect"] = True
+            transaction["token_id"] = "0"
+            transaction["token_address"] = TOKENS["QUIPU"]
+        elif transaction["target"] == SMART_CONTRACTS["QuipuSwap MTRIA"]:
+            transaction["kind"] = "buy Materia in QuipuSwap"
+            transaction["collect"] = True
+            transaction["token_id"] = "0"
+            transaction["token_address"] = TOKENS["Materia"]
+        elif transaction["target"] == SMART_CONTRACTS["QuipuSwap kUSD"]:
+            transaction["kind"] = "buy kUSD in QuipuSwap"
+            transaction["collect"] = True
+            transaction["token_id"] = "0"
+            transaction["token_address"] = "KT1K9gCRgaLRFKTErYt1wVxA3Frb9FjasjTV"
 
     if transaction["sender"] in [SMART_CONTRACTS["QuipuSwap hDAO old"], SMART_CONTRACTS["QuipuSwap hDAO"]]:
         if transaction["amount"] > 0:
@@ -1175,6 +1240,36 @@ for t in raw_transactions:
             transaction["collection_sale"] = True
             transaction["token_id"] = "0"
             transaction["token_address"] = TOKENS["uUSD"]
+    elif transaction["sender"] == SMART_CONTRACTS["QuipuSwap HEH"]:
+        if transaction["amount"] > 0:
+            transaction["kind"] = "sell HEH in QuipuSwap"
+            transaction["collection_sale"] = True
+            transaction["token_id"] = "0"
+            transaction["token_address"] = "KT1G1cCRNBgQ48mVDjopHjEmTN5Sbtar8nn9"
+    elif transaction["sender"] == SMART_CONTRACTS["QuipuSwap KALAM"]:
+        if transaction["amount"] > 0:
+            transaction["kind"] = "sell KALAM in QuipuSwap"
+            transaction["collection_sale"] = True
+            transaction["token_id"] = "0"
+            transaction["token_address"] = TOKENS["KALAM"]
+    elif transaction["sender"] == SMART_CONTRACTS["QuipuSwap QUIPU"]:
+        if transaction["amount"] > 0:
+            transaction["kind"] = "sell QUIPU in QuipuSwap"
+            transaction["collection_sale"] = True
+            transaction["token_id"] = "0"
+            transaction["token_address"] = TOKENS["QUIPU"]
+    elif transaction["sender"] == SMART_CONTRACTS["QuipuSwap MTRIA"]:
+        if transaction["amount"] > 0:
+            transaction["kind"] = "sell Materia in QuipuSwap"
+            transaction["collection_sale"] = True
+            transaction["token_id"] = "0"
+            transaction["token_address"] = TOKENS["Materia"]
+    elif transaction["sender"] == SMART_CONTRACTS["QuipuSwap kUSD"]:
+        if transaction["amount"] > 0:
+            transaction["kind"] = "sell kUSD in QuipuSwap"
+            transaction["collection_sale"] = True
+            transaction["token_id"] = "0"
+            transaction["token_address"] = "KT1K9gCRgaLRFKTErYt1wVxA3Frb9FjasjTV"
 
     if transaction["entrypoint"] == "accept_invitation":
         if transaction["target"] == SMART_CONTRACTS["objkt.com Minting Factory"]:
@@ -1186,30 +1281,45 @@ for t in raw_transactions:
             token_out = three_route_tokens[transaction["target"]][transaction["parameters"]["token_out_id"]]
 
             if "xtz" in token_in:
-                if token_out["fa2"]["contract_address"] in token_aliases:
-                    transaction["kind"] = "buy %s in 3Route" % token_aliases[token_out["fa2"]["contract_address"]]
+                if "fa2" in token_out:
+                    transaction["token_id"] = token_out["fa2"]["fa2_id"]
+                    transaction["token_address"] = token_out["fa2"]["contract_address"]
+                elif "fa12" in token_out:
+                    transaction["token_id"] = "0"
+                    transaction["token_address"] = token_out["fa12"]["contract_address"]
+
+                if transaction["token_address"] in token_aliases:
+                    transaction["kind"] = "buy %s in 3Route" % token_aliases[transaction["token_address"]]
                 else:
                     transaction["kind"] = "buy token in 3Route"
 
                 transaction["collect"] = True
-                transaction["token_id"] = token_out["fa2"]["fa2_id"]
                 transaction["token_editions"] = None
-                transaction["token_address"] = token_out["fa2"]["contract_address"]
             elif "xtz" in token_out:
-                if token_in["fa2"]["contract_address"] in token_aliases:
-                    transaction["kind"] = "sell %s in 3Route" % token_aliases[token_in["fa2"]["contract_address"]]
+                if "fa2" in token_in:
+                    transaction["token_id"] = token_in["fa2"]["fa2_id"]
+                    transaction["token_address"] = token_in["fa2"]["contract_address"]
+                elif "fa12" in token_in:
+                    transaction["token_id"] = "0"
+                    transaction["token_address"] = token_in["fa12"]["contract_address"]
+
+                if transaction["token_address"] in token_aliases:
+                     transaction["kind"] = "sell %s in 3Route" % token_aliases[transaction["token_address"]]
                 else:
                     transaction["kind"] = "sell token in 3Route"
 
                 transaction["collection_sale"] = True
-                transaction["token_id"] = token_in["fa2"]["fa2_id"]
                 transaction["token_editions"] = None
-                transaction["token_address"] = token_in["fa2"]["contract_address"]
             else:
+                if "fa2" in token_out:
+                    transaction["token_id"] = token_out["fa2"]["fa2_id"]
+                    transaction["token_address"] = token_out["fa2"]["contract_address"]
+                elif "fa12" in token_out:
+                    transaction["token_id"] = "0"
+                    transaction["token_address"] = token_out["fa12"]["contract_address"]
+
                 transaction["kind"] = "swap tokens in 3Route"
-                transaction["token_id"] = token_out["fa2"]["fa2_id"]
                 transaction["token_editions"] = None
-                transaction["token_address"] = token_out["fa2"]["contract_address"]
 
             three_route_operations[transaction["hash"]] = {
                 "kind": transaction["kind"],
