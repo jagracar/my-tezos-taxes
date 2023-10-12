@@ -95,8 +95,10 @@ if language == "english":
         operations["received_amount"].sum(), (operations["received_amount"] * tez_to_fiat).sum(), fiat_coin))
     print("   %.2f tez (%.2f %s) bought in exchanges." % (
         operations["buy_tez_amount"].sum(), (operations["buy_tez_amount"] * tez_to_fiat).sum(), fiat_coin))
-    print("   %.2f tez (%.2f %s) came from sales of the user minted art." % (
-        operations["art_sale_amount"].sum(), (operations["art_sale_amount"] * tez_to_fiat).sum(), fiat_coin))
+    print("   %.2f tez (%.2f %s) came from primary sales of the user minted art." % (
+        operations["primary_art_sale_amount"].sum(), (operations["primary_art_sale_amount"] * tez_to_fiat).sum(), fiat_coin))
+    print("   %.2f tez (%.2f %s) came from secondary sales of the user minted art." % (
+        operations["secondary_art_sale_amount"].sum(), (operations["secondary_art_sale_amount"] * tez_to_fiat).sum(), fiat_coin))
     print("   %.2f tez (%.2f %s) came from reselling NFTs minted by other artists." % (
         operations["collection_sale_amount"].sum(), (operations["collection_sale_amount"] * tez_to_fiat).sum(), fiat_coin))
     print("   %.2f tez (%.2f %s) came from prizes (hackathons, community rewards, etc)." % (
@@ -188,8 +190,10 @@ elif language == "german":
         operations["received_amount"].sum(), (operations["received_amount"] * tez_to_fiat).sum(), fiat_coin))
     print("   %.2f tez (%.2f %s) auf einer Handelsplattform gekauft." % (
         operations["buy_tez_amount"].sum(), (operations["buy_tez_amount"] * tez_to_fiat).sum(), fiat_coin))
-    print("   %.2f tez (%.2f %s) Einkünfte durch Verkäufe selbst geprägter Kunst." % (
-        operations["art_sale_amount"].sum(), (operations["art_sale_amount"] * tez_to_fiat).sum(), fiat_coin))
+    print("   %.2f tez (%.2f %s) Einkünfte durch Erstverkauf selbst geprägter Kunst." % (
+        operations["primary_art_sale_amount"].sum(), (operations["primary_art_sale_amount"] * tez_to_fiat).sum(), fiat_coin))
+    print("   %.2f tez (%.2f %s) Einkünfte durch Zweitverkauf selbst geprägter Kunst." % (
+        operations["secondary_art_sale_amount"].sum(), (operations["secondary_art_sale_amount"] * tez_to_fiat).sum(), fiat_coin))
     print("   %.2f tez (%.2f %s) Einkünfte durch Verkäufe von Werken anderer Künstler." % (
         operations["collection_sale_amount"].sum(), (operations["collection_sale_amount"] * tez_to_fiat).sum(), fiat_coin))
     print("   %.2f tez (%.2f %s) Einkünfte durch Preise (Hackathons, Vergütungen durch eine Community, etc.)." % (

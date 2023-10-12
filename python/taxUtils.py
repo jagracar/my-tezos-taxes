@@ -1212,6 +1212,7 @@ def get_user_art_sales(user_wallets):
                     token_id
                     amount
                     fa2_address
+                    seller_address
                     price
                 }
             }

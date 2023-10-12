@@ -89,6 +89,8 @@ for t in raw_transactions:
         "collect": False,
         "active_offer": False,
         "art_sale": False,
+        "primary_art_sale": False,
+        "secondary_art_sale": False,
         "collection_sale": False,
         "staking": False,
         "origination": False,
@@ -177,6 +179,8 @@ for t in raw_transactions:
     if hash in user_art_sales:
         sale = user_art_sales[hash]
         transaction["art_sale"] = True
+        transaction["primary_art_sale"] = sale["seller_address"] in user_wallets
+        transaction["secondary_art_sale"] = sale["seller_address"] not in user_wallets
         transaction["token_id"] = sale["token_id"]
         transaction["token_editions"] = sale["amount"] if sale["amount"] is not None else 1
         transaction["token_address"] = sale["fa2_address"]
@@ -1404,6 +1408,8 @@ for o in raw_originations:
         "collect": False,
         "active_offer": False,
         "art_sale": False,
+        "primary_art_sale": False,
+        "secondary_art_sale": False,
         "collection_sale": False,
         "staking": False,
         "origination": True,
@@ -1449,6 +1455,8 @@ for r in raw_reveals:
         "collect": False,
         "active_offer": False,
         "art_sale": False,
+        "primary_art_sale": False,
+        "secondary_art_sale": False,
         "collection_sale": False,
         "staking": False,
         "origination": False,
@@ -1494,6 +1502,8 @@ for d in raw_delegations:
         "collect": False,
         "active_offer": False,
         "art_sale": False,
+        "primary_art_sale": False,
+        "secondary_art_sale": False,
         "collection_sale": False,
         "staking": False,
         "origination": False,
@@ -1539,6 +1549,8 @@ for b in raw_bakings:
         "collect": False,
         "active_offer": False,
         "art_sale": False,
+        "primary_art_sale": False,
+        "secondary_art_sale": False,
         "collection_sale": False,
         "staking": False,
         "origination": False,
@@ -1584,6 +1596,8 @@ for e in raw_endorsing_rewards:
         "collect": False,
         "active_offer": False,
         "art_sale": False,
+        "primary_art_sale": False,
+        "secondary_art_sale": False,
         "collection_sale": False,
         "staking": False,
         "origination": False,
@@ -1662,22 +1676,23 @@ columns = [
     "timestamp", "level", "tez_balance", "kind", "entrypoint", "initiator",
     "sender", "target", "is_initiator", "is_sender", "is_target", "applied",
     "internal", "ignore", "mint", "collect", "active_offer", "art_sale",
-    "collection_sale", "staking", "origination", "reveal", "delegation",
-    "baking", "endorsing_reward", "prize", "donation", "buy_tez", "sell_tez",
-    "amount", "fees", "received_amount", "art_sale_amount",
-    "collection_sale_amount", "staking_rewards_amount", "baking_amount",
-    "endorsing_rewards_amount", "prize_amount", "buy_tez_amount",
-    "received_amount_others", "spent_amount", "collect_amount",
-    "active_offer_amount", "donation_amount", "sell_tez_amount",
-    "spent_amount_others", "spent_fees", "tez_to_euros", "tez_to_usd",
-    "token_name", "token_id", "token_editions", "token_address", "tzkt_link",
-    "comment"]
+    "primary_art_sale", "secondary_art_sale", "collection_sale", "staking",
+    "origination", "reveal", "delegation", "baking", "endorsing_reward",
+    "prize", "donation", "buy_tez", "sell_tez", "amount", "fees",
+    "received_amount", "art_sale_amount", "primary_art_sale_amount",
+    "secondary_art_sale_amount", "collection_sale_amount",
+    "staking_rewards_amount", "baking_amount", "endorsing_rewards_amount",
+    "prize_amount", "buy_tez_amount", "received_amount_others", "spent_amount",
+    "collect_amount", "active_offer_amount", "donation_amount",
+    "sell_tez_amount", "spent_amount_others", "spent_fees", "tez_to_euros",
+    "tez_to_usd", "token_name", "token_id", "token_editions", "token_address",
+    "tzkt_link", "comment"]
 format = [
     "%s", "%i", "%f", "%s", "%s", "%s", "%s", "%s", "%r", "%r", "%r", "%r",
     "%r", "%r", "%r", "%r", "%r", "%r", "%r", "%r", "%r", "%r", "%r", "%r",
-    "%r", "%r", "%r", "%r", "%r", "%f", "%f", "%f", "%f", "%f", "%f", "%f",
+    "%r", "%r", "%r", "%r", "%r", "%r", "%r", "%f", "%f", "%f", "%f", "%f",
     "%f", "%f", "%f", "%f", "%f", "%f", "%f", "%f", "%f", "%f", "%f", "%f",
-    "%f", "%s", "%s", "%s", "%s", "%s", "%s"]
+    "%f", "%f", "%f", "%f", "%f", "%s", "%s", "%s", "%s", "%s", "%s"]
 
 with open(os.path.join(data_directory, "output", file_name), "w", newline="\n") as output_file:
     writer = csv.writer(output_file)
@@ -1701,6 +1716,8 @@ with open(os.path.join(data_directory, "output", file_name), "w", newline="\n") 
         fees = op["fees"]
         received_amount = amount if (is_target and applied and (not ignore)) else 0
         art_sale_amount = amount if (is_target and applied and (not ignore) and op["art_sale"]) else 0
+        primary_art_sale_amount = amount if (is_target and applied and (not ignore) and op["primary_art_sale"]) else 0
+        secondary_art_sale_amount = amount if (is_target and applied and (not ignore) and op["secondary_art_sale"]) else 0
         collection_sale_amount = amount if (is_target and applied and (not ignore) and op["collection_sale"]) else 0
         staking_rewards_amount = amount if (is_target and applied and (not ignore) and op["staking"]) else 0
         baking_amount = amount if (is_target and applied and (not ignore) and op["baking"]) else 0
@@ -1756,6 +1773,8 @@ with open(os.path.join(data_directory, "output", file_name), "w", newline="\n") 
             op["collect"],
             op["active_offer"],
             op["art_sale"],
+            op["primary_art_sale"],
+            op["secondary_art_sale"],
             op["collection_sale"],
             op["staking"],
             op["origination"],
@@ -1771,6 +1790,8 @@ with open(os.path.join(data_directory, "output", file_name), "w", newline="\n") 
             fees,
             received_amount,
             art_sale_amount,
+            primary_art_sale_amount,
+            secondary_art_sale_amount,
             collection_sale_amount,
             staking_rewards_amount,
             baking_amount,
