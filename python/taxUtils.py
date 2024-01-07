@@ -1113,7 +1113,7 @@ def get_user_auction_bids(user_wallets):
     # Get the user auction bid operations
     query = """
         query UserAuctionBids {
-            events(where: {bidder_address: {_in: ["%s"]}}, order_by: {timestamp: asc}, limit: **LIMIT**, offset: **OFFSET**) {
+            events(where: {bidder_address: {_in: ["%s"]}, type: {_eq: "OBJKT_BID_ENGLISH_AUCTION"}}, order_by: {timestamp: asc}, limit: **LIMIT**, offset: **OFFSET**) {
                 type
                 timestamp
                 ophash
@@ -2069,6 +2069,11 @@ def get_tez_exchange_gains(operations, hold_period):
             # Check if all the tez from the "first in" operation have been used
             if received_amount[counter] == 0:
                 counter += 1
+
+    print("")
+    print("Timestamp of the last effective tez buy: %s " % timestamp[counter])
+    print("Remaining tez from that buy: %s" % received_amount[counter])
+    print("")
 
     # Build a data frame from the numpy arrays
     tez_exchange_gains = pd.DataFrame({
