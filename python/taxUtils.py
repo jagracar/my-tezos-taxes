@@ -61,7 +61,9 @@ TOKENS = {
     "KALAM": "KT1A5P4ejnLix13jtadsfV9GCnXLMNnab8UT",
     "QUIPU": "KT193D4vozYnhGJQVtw7CoxxqphqUEEwK6Vb",
     "spam token 1": "KT1AShwxNxqEha1PeaVdh7zRuzeneFzHmjJs",
-    "spam token 2": "KT18j785rB3G4wXxEpqwwG2hJ2iZrjLAbeo7"
+    "spam token 2": "KT18j785rB3G4wXxEpqwwG2hJ2iZrjLAbeo7",
+    "TED": "KT1GY5qCWwmESfTv9dgjYyTYs2T5XGDSvRp1",
+    "TEDv": "KT1R4KPQxpFHAkX8MKCFmdoiqTaNSSpnJXPL"
 }
 
 # The main tezos FA2 token names
@@ -104,6 +106,7 @@ SMART_CONTRACTS = {
     "objkt.bid Legacy": "KT1Dno3sQZwR5wUCWxzaohwuJwG3gX1VWj1Z",
     "objkt.com marketplace v1": "KT1FvqJwEDWb1Gwc55Jd1jjTHRVWbYKUUpyq",
     "objkt.com marketplace v2": "KT1WvzYHCNBvDSdwafTHv7nJ1dWmZ8GCYuuC",
+    "objkt.com marketplace v3": "KT1Xjap1TwmDR1d8yEd8ErkraAj2mbdMrPZY",
     "objkt.com English Auctions Old": "KT1Wvk8fon9SgNEPQKewoSL2ziGGuCQebqZc",
     "objkt.com English Auctions v1": "KT1XjcRq5MLAzMKQ3UHsrue2SeU2NbxUrzmU",
     "objkt.com English Auctions v2": "KT18p94vjkkHYY3nPmernmgVR7HdZFzE7NAk",
@@ -204,7 +207,16 @@ SMART_CONTRACTS = {
     "3Route v1": "KT1PBHtvMNqm8TL4HFwnAaJNcemxa2cZbauj",
     "3Route v2": "KT1Tuta6vbpHhZ15ixsYD3qJdhnpEAuogLQ9",
     "3Route v3": "KT1R7WEtNNim3YgkxPt8wPMczjH3eyhbJMtz",
-    "3Route v4": "KT1V5XKmeypanMS9pR65REpqmVejWBZURuuT"
+    "3Route v4": "KT1V5XKmeypanMS9pR65REpqmVejWBZURuuT",
+    "Teia DAO governance": "KT1GHX73W5BcjbYRSZSrUJcnZE3Uw92VYF66",
+    "Teia DAO governance prototype": "KT1VLLPBjSFFHMp9LxoRfA65cynkxeRDfQeX",
+    "Teia DAO treasury": "KT1RRLSxpsiKpnVZQsBGCqG9HFBXbPBtUYBD",
+    "Teia DAO treasury prototype": "KT1BVyCC1dfQKH4T35Zyp3zDY97CX2m5R6Qw",
+    "Teia DAO representatives": "KT19NxVsT4vXAUzSaJTBi8pJJbqWWWTRJXnP",
+    "Teia DAO representatives prototype": "KT1UgY8wHUVU9Lhv54qJgrqgDSMZ2x6VeLr1",
+    "Teia multi-option polls": "KT1SUExZfkmxf2fafrVgYjZGEKDete2siWoU",
+    "Teia multi-option polls prototype": "KT1NPELoSdKjKzfSs85hCTPcxWjuyJjoM4C5",
+    "Tezos Domains TED Airdrop contract": "KT1VxKQbYBVD8fSkqaewJGigL3tmcLWrsXcu"
 }
 
 

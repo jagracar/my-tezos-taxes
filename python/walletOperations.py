@@ -663,10 +663,10 @@ for t in raw_transactions:
         if transaction["target"] in [SMART_CONTRACTS["8bidou marketplace I"], SMART_CONTRACTS["8bidou marketplace II"]]:
             transaction["kind"] = "8bidou cancel swap"
     elif transaction["entrypoint"] == "ask":
-        if transaction["target"] in [SMART_CONTRACTS["objkt.com marketplace v1"], SMART_CONTRACTS["objkt.com marketplace v2"]]:
+        if transaction["target"] in [SMART_CONTRACTS["objkt.com marketplace v1"], SMART_CONTRACTS["objkt.com marketplace v2"], SMART_CONTRACTS["objkt.com marketplace v3"]]:
             transaction["kind"] = "objkt.com swap"
     elif transaction["entrypoint"] == "retract_ask":
-        if transaction["target"] in [SMART_CONTRACTS["objkt.com marketplace v1"], SMART_CONTRACTS["objkt.com marketplace v2"]]:
+        if transaction["target"] in [SMART_CONTRACTS["objkt.com marketplace v1"], SMART_CONTRACTS["objkt.com marketplace v2"], SMART_CONTRACTS["objkt.com marketplace v3"]]:
             transaction["kind"] = "objkt.com cancel swap"
     elif transaction["entrypoint"] == "listing":
         if transaction["target"] in [SMART_CONTRACTS["FXHASH marketplace v2"], SMART_CONTRACTS["FXHASH marketplace v3"]]:
@@ -722,7 +722,7 @@ for t in raw_transactions:
         if transaction["target"] == SMART_CONTRACTS["objkt.com marketplace v1"]:
             transaction["kind"] = "objkt.com accept offer"
     elif transaction["entrypoint"] == "offer":
-        if transaction["target"] == SMART_CONTRACTS["objkt.com marketplace v2"]:
+        if transaction["target"] in [SMART_CONTRACTS["objkt.com marketplace v2"], SMART_CONTRACTS["objkt.com marketplace v3"]]:
             transaction["kind"] = "objkt.com offer"
         elif transaction["target"] in [SMART_CONTRACTS["FXHASH marketplace v2"], SMART_CONTRACTS["FXHASH marketplace v3"]]:
             transaction["kind"] = "FXHASH offer"
@@ -730,7 +730,7 @@ for t in raw_transactions:
         if transaction["target"] == SMART_CONTRACTS["FXHASH marketplace v2"]:
             transaction["kind"] = "FXHASH offer"
     elif transaction["entrypoint"] == "retract_offer":
-        if transaction["target"] == SMART_CONTRACTS["objkt.com marketplace v2"]:
+        if transaction["target"] in [SMART_CONTRACTS["objkt.com marketplace v2"], SMART_CONTRACTS["objkt.com marketplace v3"]]:
             transaction["kind"] = "objkt.com cancel offer"
     elif transaction["entrypoint"] == "offer_cancel":
         if transaction["target"] in [SMART_CONTRACTS["FXHASH marketplace v2"], SMART_CONTRACTS["FXHASH marketplace v3"]]:
@@ -739,7 +739,7 @@ for t in raw_transactions:
         if transaction["target"] == SMART_CONTRACTS["FXHASH marketplace v2"]:
             transaction["kind"] = "FXHASH cancel offer"
     elif transaction["entrypoint"] == "fulfill_offer":
-        if transaction["target"] == SMART_CONTRACTS["objkt.com marketplace v2"]:
+        if transaction["target"] in [SMART_CONTRACTS["objkt.com marketplace v2"], SMART_CONTRACTS["objkt.com marketplace v3"]]:
             transaction["kind"] = "objkt.com accept offer"
     elif transaction["entrypoint"] in ["offer_accept", "collection_offer_accept"]:
         if transaction["target"] in [SMART_CONTRACTS["FXHASH marketplace v2"], SMART_CONTRACTS["FXHASH marketplace v3"]]:
@@ -831,7 +831,7 @@ for t in raw_transactions:
             transaction["token_editions"] = 1
             transaction["token_address"] = TOKENS["contter token"]
     elif transaction["entrypoint"] == "fulfill_ask":
-        if transaction["target"] in [SMART_CONTRACTS["objkt.com marketplace v1"], SMART_CONTRACTS["objkt.com marketplace v2"]]:
+        if transaction["target"] in [SMART_CONTRACTS["objkt.com marketplace v1"], SMART_CONTRACTS["objkt.com marketplace v2"], SMART_CONTRACTS["objkt.com marketplace v3"]]:
             transaction["kind"] = "objkt.com collect"
     elif transaction["entrypoint"] == "claim":
         if transaction["target"] in objktcom_open_editions:
@@ -915,7 +915,7 @@ for t in raw_transactions:
             transaction["kind"] = "teia sell"
         elif transaction["sender"] in [SMART_CONTRACTS["teia marketplace prototype 1"], SMART_CONTRACTS["teia marketplace prototype 2"]]:
             transaction["kind"] = "teia prototype sell"
-        elif transaction["sender"] in [SMART_CONTRACTS["objkt.com marketplace v1"], SMART_CONTRACTS["objkt.com marketplace v2"]]:
+        elif transaction["sender"] in [SMART_CONTRACTS["objkt.com marketplace v1"], SMART_CONTRACTS["objkt.com marketplace v2"], SMART_CONTRACTS["objkt.com marketplace v3"]]:
             transaction["kind"] = "objkt.com sell"
         elif transaction["sender"] in [SMART_CONTRACTS["FXHASH marketplace v1"], SMART_CONTRACTS["FXHASH marketplace v2"], SMART_CONTRACTS["FXHASH marketplace v3"], SMART_CONTRACTS["FXHASH minter v1"], SMART_CONTRACTS["FXHASH minter v2"], SMART_CONTRACTS["FXHASH minter v3"], SMART_CONTRACTS["FXHASH minter v4"]]:
             transaction["kind"] = "FXHASH sell"
@@ -1037,6 +1037,12 @@ for t in raw_transactions:
         (transaction["sender"] == SMART_CONTRACTS["teia multisig prototype 4"])):
         transaction["kind"] = "multisig operation"
 
+    if ((transaction["target"] == SMART_CONTRACTS["Teia multi-option polls prototype"]) or
+        (transaction["sender"] == SMART_CONTRACTS["Teia multi-option polls prototype"]) or
+        (transaction["target"] == SMART_CONTRACTS["Teia multi-option polls"]) or 
+        (transaction["sender"] == SMART_CONTRACTS["Teia multi-option polls"])):
+        transaction["kind"] = "Teia polls operation"
+
     if transaction["entrypoint"] == "claim":
         if transaction["target"] == SMART_CONTRACTS["teia DAO token distributor"]:
             transaction["kind"] = "teia DAO token claim"
@@ -1046,6 +1052,26 @@ for t in raw_transactions:
             transaction["kind"] = "test teia DAO token claim"
             transaction["token_id"] = "0"
             transaction["token_address"] = TOKENS["testTEIA"]
+        elif transaction["target"] == SMART_CONTRACTS["Tezos Domains TED Airdrop contract"]:
+            transaction["kind"] = "TED token claim"
+            transaction["token_id"] = "0"
+            transaction["token_address"] = TOKENS["TED"]
+
+    if ((transaction["target"] == SMART_CONTRACTS["Teia DAO governance prototype"]) or
+        (transaction["sender"] == SMART_CONTRACTS["Teia DAO governance prototype"]) or
+        (transaction["target"] == SMART_CONTRACTS["Teia DAO treasury prototype"]) or 
+        (transaction["sender"] == SMART_CONTRACTS["Teia DAO treasury prototype"]) or
+        (transaction["target"] == SMART_CONTRACTS["Teia DAO representatives prototype"]) or 
+        (transaction["sender"] == SMART_CONTRACTS["Teia DAO representatives prototype"])):
+        transaction["kind"] = "Teia DAO prototype operation"
+
+    if ((transaction["target"] == SMART_CONTRACTS["Teia DAO governance"]) or
+        (transaction["sender"] == SMART_CONTRACTS["Teia DAO governance"]) or
+        (transaction["target"] == SMART_CONTRACTS["Teia DAO treasury"]) or 
+        (transaction["sender"] == SMART_CONTRACTS["Teia DAO treasury"]) or
+        (transaction["target"] == SMART_CONTRACTS["Teia DAO representatives"]) or 
+        (transaction["sender"] == SMART_CONTRACTS["Teia DAO representatives"])):
+        transaction["kind"] = "Teia DAO operation"
 
     if transaction["target"] in [SMART_CONTRACTS["Interactive experiment 1"], SMART_CONTRACTS["Interactive experiment 2"], SMART_CONTRACTS["Interactive experiment 3"], SMART_CONTRACTS["Interactive experiment 4"], SMART_CONTRACTS["Interactive experiment 5"]]:
         transaction["kind"] = "interactive experiment operation"
