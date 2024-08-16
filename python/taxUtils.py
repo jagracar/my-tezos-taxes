@@ -63,7 +63,8 @@ TOKENS = {
     "spam token 1": "KT1AShwxNxqEha1PeaVdh7zRuzeneFzHmjJs",
     "spam token 2": "KT18j785rB3G4wXxEpqwwG2hJ2iZrjLAbeo7",
     "TED": "KT1GY5qCWwmESfTv9dgjYyTYs2T5XGDSvRp1",
-    "TEDv": "KT1R4KPQxpFHAkX8MKCFmdoiqTaNSSpnJXPL"
+    "TEDv": "KT1R4KPQxpFHAkX8MKCFmdoiqTaNSSpnJXPL",
+    "SYNEMA": "KT1Jo8asw9HwWwdgz9MXdTxfaSBpX4jgiu46"
 }
 
 # The main tezos FA2 token names
@@ -114,6 +115,7 @@ SMART_CONTRACTS = {
     "objkt.com Dutch Auctions v1": "KT1QJ71jypKGgyTNtXjkCAYJZNhCKWiHuT2r",
     "objkt.com Dutch Auctions v2": "KT1XXu88HkNzQRHNgAf7Mnq68LyS9MZJNoHP",
     "objkt.com Minting Factory": "KT1Aq4wWmVanpQhq4TTfjZXB5AjFpx15iQMM",
+    "objkt.com Fee Sharing Helper v3": "KT1SmvBMFq9GWB5odvvW1V9gMSPvygMPuwsP",
     "FXHASH marketplace v1": "KT1Xo5B7PNBAeynZPmca4bRh6LQow4og1Zb9",
     "FXHASH marketplace v2": "KT1GbyoDi7H1sfXmimXpptZJuCdHMh66WS9u",
     "FXHASH marketplace v3": "KT1M1NyU9X4usEimt2f3kDaijZnDMNBu42Ja",
@@ -216,7 +218,8 @@ SMART_CONTRACTS = {
     "Teia DAO representatives prototype": "KT1UgY8wHUVU9Lhv54qJgrqgDSMZ2x6VeLr1",
     "Teia multi-option polls": "KT1SUExZfkmxf2fafrVgYjZGEKDete2siWoU",
     "Teia multi-option polls prototype": "KT1NPELoSdKjKzfSs85hCTPcxWjuyJjoM4C5",
-    "Tezos Domains TED Airdrop contract": "KT1VxKQbYBVD8fSkqaewJGigL3tmcLWrsXcu"
+    "Tezos Domains TED Airdrop contract": "KT1VxKQbYBVD8fSkqaewJGigL3tmcLWrsXcu",
+    "Tezos Domains Governance Pool contract": "KT1Lu5om8u4ns2VWxcufgQRzjaLLhh3Qvf5B"
 }
 
 

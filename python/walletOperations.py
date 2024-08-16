@@ -1057,6 +1057,22 @@ for t in raw_transactions:
             transaction["token_id"] = "0"
             transaction["token_address"] = TOKENS["TED"]
 
+    if transaction["entrypoint"] == "deposit":
+        if transaction["target"] == SMART_CONTRACTS["Tezos Domains Governance Pool contract"]:
+            transaction["kind"] = "TED DAO operation"
+
+    if transaction["entrypoint"] == "mint_tokens":
+        if transaction["sender"] == SMART_CONTRACTS["Tezos Domains Governance Pool contract"]:
+            transaction["kind"] = "TED DAO operation"
+ 
+    if transaction["entrypoint"] == "withdraw":
+        if transaction["target"] == SMART_CONTRACTS["Tezos Domains Governance Pool contract"]:
+            transaction["kind"] = "TED DAO operation"
+ 
+    if transaction["entrypoint"] == "burn_tokens":
+        if transaction["sender"] == SMART_CONTRACTS["Tezos Domains Governance Pool contract"]:
+            transaction["kind"] = "TED DAO operation"
+
     if ((transaction["target"] == SMART_CONTRACTS["Teia DAO governance prototype"]) or
         (transaction["sender"] == SMART_CONTRACTS["Teia DAO governance prototype"]) or
         (transaction["target"] == SMART_CONTRACTS["Teia DAO treasury prototype"]) or 
@@ -1304,6 +1320,10 @@ for t in raw_transactions:
     if transaction["entrypoint"] == "accept_invitation":
         if transaction["target"] == SMART_CONTRACTS["objkt.com Minting Factory"]:
             transaction["kind"] = "accept objkt.com invitation"
+
+    if transaction["entrypoint"] == "enforce_conditions":
+        if transaction["target"] == SMART_CONTRACTS["objkt.com Fee Sharing Helper v3"]:
+            transaction["kind"] = "distribute objkt.com artists fees"
 
     if transaction["entrypoint"] == "execute":
         if (transaction["target"] in [SMART_CONTRACTS["3Route v1"], SMART_CONTRACTS["3Route v2"], SMART_CONTRACTS["3Route v3"], SMART_CONTRACTS["3Route v4"]]) and (transaction["sender"] in user_wallets) and (transaction["parameters"]["receiver"] == transaction["sender"]):
