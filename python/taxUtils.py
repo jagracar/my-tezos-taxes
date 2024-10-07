@@ -1907,9 +1907,15 @@ def get_token_trades(collected_tokens, dropped_tokens, sold_tokens, transferred_
         # Get the sell information
         sell_timestamp = token["sell_timestamp"]
         sell_editions = token["token_editions"]
-        sell_price_per_edition = token["sell_price"] / sell_editions
-        sell_price_per_edition_euros = token["sell_price_euros"] / sell_editions
-        sell_price_per_edition_usd = token["sell_price_usd"] / sell_editions
+
+        if sell_editions != 0:
+            sell_price_per_edition = token["sell_price"] / sell_editions
+            sell_price_per_edition_euros = token["sell_price_euros"] / sell_editions
+            sell_price_per_edition_usd = token["sell_price_usd"] / sell_editions
+        else:
+            sell_price_per_edition = 0
+            sell_price_per_edition_euros = 0
+            sell_price_per_edition_usd = 0
 
         # Check if the token is owed by the user at that time
         cond = (incoming_tokens["buy_timestamp"] <= sell_timestamp) & (
