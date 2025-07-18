@@ -13,8 +13,9 @@ never use them (DeFi), but you are free to extend the scripts to your needs.
 
 ## How to run it
 
-Edit [user_wallets.json](data/input/user_wallets.json) and
-[baker_wallets.json](data/input/baker_wallets.json) with your personal information.
+Edit [user_wallets.json](data/input/user_wallets.json),
+[baker_wallets.json](data/input/baker_wallets.json) and 
+[staking_rewards.csv](data/input/staking_rewards.csv) with your personal information.
 
 Edit [tax_parameters.json](data/input/tax_parameters.json) with your country specific tax
 parameters.
