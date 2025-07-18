@@ -32,6 +32,7 @@ raw_reveals = get_user_reveals(user_wallets)
 raw_delegations = get_user_delegations(user_wallets)
 raw_bakings = get_user_bakings(user_wallets)
 raw_endorsing_rewards = get_user_endorsing_rewards(user_wallets)
+raw_staking_rewards = get_user_staking_rewards(os.path.join(data_directory, "input", "staking_rewards.csv"))
 
 # Get the user mints, swaps, collects, auction bids, art sales and collection sales
 user_mints = get_user_mints(user_wallets)
@@ -929,8 +930,10 @@ for t in raw_transactions:
             transaction["kind"] = "8scribo sell"
         elif transaction["sender"] == SMART_CONTRACTS["contter marketplace II"]:
             transaction["kind"] = "contter sell"
-        elif transaction["sender"] in [SMART_CONTRACTS["Breadfond 1"], SMART_CONTRACTS["Breadfond 2"], SMART_CONTRACTS["Breadfond 3"]]:
+        elif transaction["sender"] in [SMART_CONTRACTS["Breadfond 1"], SMART_CONTRACTS["Breadfond 2"], SMART_CONTRACTS["Breadfond 3"], SMART_CONTRACTS["Breadfond 4"]]:
             transaction["kind"] = "Breadfond share in tez"
+            transaction["art_sale"] = True
+            transaction["secondary_art_sale"] = True
 
     # Check if the transaction is connected with the user registry information
     if transaction["entrypoint"] == "registry":
@@ -1668,12 +1671,60 @@ for e in raw_endorsing_rewards:
     # Add the processed endorsing rewards
     endorsing_rewards.append(endorsing_reward)
 
+# Process the staking rewards
+staking_rewards = []
+
+for s in raw_staking_rewards:
+    # Save the most relevant information
+    staking_reward = {
+        "timestamp": s["timestamp"],
+        "level": s["level"],
+        "kind": "receive tez from staking",
+        "entrypoint": None,
+        "parameters": None,
+        "initiator": None,
+        "sender": s["baker"],
+        "target": s["user"],
+        "applied": True,
+        "internal": False,
+        "ignore": False,
+        "mint": False,
+        "collect": False,
+        "active_offer": False,
+        "art_sale": False,
+        "primary_art_sale": False,
+        "secondary_art_sale": False,
+        "collection_sale": False,
+        "staking": True,
+        "origination": False,
+        "reveal": False,
+        "delegation": False,
+        "baking": False,
+        "endorsing_reward": False,
+        "prize": False,
+        "donation": False,
+        "buy_tez": False,
+        "sell_tez": False,
+        "amount": s["rewarded_tez"],
+        "fees": 0,
+        "tez_to_euros": s["quote"]["eur"],
+        "tez_to_usd": s["quote"]["usd"],
+        "token_id": None,
+        "token_editions": None,
+        "token_address": None,
+        "hash": s["user"] + "/rewards",
+        "comment": ""}
+
+    # Add the processed staking reward
+    staking_rewards.append(staking_reward)
+
 # Combine the transactions, originations and reveals in a single array
 combined_operations = combine_operations(transactions, originations)
 combined_operations = combine_operations(combined_operations, reveals)
 combined_operations = combine_operations(combined_operations, delegations)
 combined_operations = combine_operations(combined_operations, bakings)
 combined_operations = combine_operations(combined_operations, endorsing_rewards)
+combined_operations = combine_operations(combined_operations, staking_rewards)
 
 # Apply the operation corrections specified by the user
 operation_corrections = read_json_file(os.path.join(data_directory, "input", "operation_corrections.json"))

@@ -175,6 +175,7 @@ SMART_CONTRACTS = {
     "Breadfond 1": "KT1AyAhwyjwmbZKVdDnZNcQDgprXpCpmSNFu",
     "Breadfond 2": "KT1XRu5sjuBxiFbaPeUkPUGy8zJmPEbuxaFx",
     "Breadfond 3": "KT1Bgz17GRSkoNN1WfRka24VZm5ffXMep67G",
+    "Breadfond 4": "KT1R9AJfohhTtbrEVVzSTHE4wQByapoTsTvY",
     "Interactive experiment 1": "KT1CiUSxDpfAeuCYubpZ75v6RFvGHwVBajDt",
     "Interactive experiment 2": "KT1JP5Zobg2ymQUtqNrAqDMUAUUPnar9UbV4",
     "Interactive experiment 3": "KT1Nih5GpH763Bov23KZYS1R1R3ZWgGaAVfw",
@@ -420,7 +421,7 @@ def get_teztok_query_result(query, kind, timeout=60):
 
     """
     # Define url to the teztok GraphQL server API
-    url = "https://api.teztok.com/v1/graphql"
+    url = "https://teztok-full.teia.art/v1/graphql"
 
     # Edit the provided query
     query = query.copy()
@@ -551,6 +552,24 @@ def get_three_route_tokens(version):
     entries = get_tzkt_query_result(url, parameters)
 
     return {entry["key"]: entry["value"] for entry in entries}
+
+
+def get_cycles_information():
+    """Returns all the tezos cycles information.
+
+    Returns
+    -------
+    list
+        A python list with the cycles information.
+
+    """
+    url = "https://api.tzkt.io/v1/cycles"
+    parameters = {
+        "select": "index,firstLevel,lastLevel,startTime,endTime,quote",
+        "quote": "eur,usd"}
+    entries = get_tzkt_query_result(url, parameters)
+
+    return {entry["index"]: entry for entry in entries}
 
 
 def get_user_transactions(user_wallets):
@@ -684,6 +703,50 @@ def get_user_bakings(user_wallets):
 
     return get_tzkt_query_result(url, parameters)
 
+
+def get_user_staking_rewards(file_name):
+    """Returns the complete list of user staking rewards.
+
+    Parameters
+    ----------
+    file_name: str
+        The complete path to the file with the user staking rewards information.
+
+    Returns
+    -------
+    list
+        A python list with the user staking rewards information.
+
+    """
+    # Load the csv file containing the user staking rewards
+    user_staking_rewards = pd.read_csv(file_name)
+
+    # Make sure the data is sorted
+    user_staking_rewards = user_staking_rewards.sort_values(
+        by=["cycle", "user"])
+
+    # Get the tezos cycles information
+    cycles_information = get_cycles_information()
+
+    # Loop over the staking rewards and store the information in a list
+    staking_rewards = []
+
+    for _, reward in user_staking_rewards.iterrows():
+        # Get the cycle information
+        cycle = cycles_information[reward["cycle"]]
+
+        # Add the reward information
+        staking_rewards.append({
+            "timestamp": cycle["endTime"],
+            "level": cycle["lastLevel"],
+            "cycle": reward["cycle"],
+            "user": reward["user"],
+            "baker": reward["baker"],
+            "staked_tez": reward["staked_tez"],
+            "rewarded_tez": reward["rewarded_tez"],
+            "quote": cycle["quote"]})
+
+    return staking_rewards
 
 def combine_operations(operations_1, operations_2):
     """Combines two lists of operations by increasing block level.
@@ -1850,7 +1913,7 @@ def get_outgoing_tokens(sold_tokens, transferred_tokens):
     outgoing_tokens = outgoing_tokens.reset_index(drop=True)
 
     # Assume one edition in entries missing the token editions information
-    outgoing_tokens.loc[outgoing_tokens["token_editions"] == "", "token_editions"] = "1"
+    outgoing_tokens.loc[outgoing_tokens["token_editions"] == "", "token_editions"] = 1
 
     # Change the token editions column type to int (works for very large integers)
     outgoing_tokens["token_editions"] = np.array([int(value) for value in outgoing_tokens["token_editions"]])
