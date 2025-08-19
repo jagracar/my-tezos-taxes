@@ -1712,7 +1712,7 @@ for s in raw_staking_rewards:
         "token_id": None,
         "token_editions": None,
         "token_address": None,
-        "hash": s["user"] + "/rewards",
+        "hash": s["user"] + "/rewards?tab=staking",
         "comment": ""}
 
     # Add the processed staking reward
